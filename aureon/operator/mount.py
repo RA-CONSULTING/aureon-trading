@@ -62,6 +62,17 @@ MOUNT_MODELS: List[Dict[str, Any]] = [
 _COGNITION_STAGES = ["ground", "agentic_cognition", "connectome_hnc_context", "conscience_veto"]
 _SWITCHBOARD_STAGES = ["ground", "fan_out", "consensus", "conscience_veto"]
 
+# The additive provenance keys every mounted response carries — the part of the
+# contract an external model relies on. Single source of truth for the manifest,
+# the benchmark's validation, and the docs.
+AUREON_ENVELOPE_KEYS = (
+    "engine", "trace_id", "grounded", "grounding",
+    "conscience_verdict", "conscience_message", "blocked", "stages", "host_mind",
+)
+
+# Bump when the wire contract changes in a way an integrator must notice.
+MOUNT_API_VERSION = "1"
+
 
 class MountError(ValueError):
     """A malformed mount request (bad body / missing messages). Maps to HTTP 400."""
@@ -307,8 +318,50 @@ def openai_error(message: str, *, code: str = "invalid_request_error", type_: st
     return {"error": {"message": message, "type": type_, "code": code}}
 
 
+def integration_manifest() -> Dict[str, Any]:
+    """The self-describing integration map an AGI system reads to plug in.
+
+    A single machine-readable contract — endpoint, engines, request/response shape,
+    the provenance keys, the boundary behaviour, and how to mount — served live at
+    ``GET /v1/integration`` and validated by the mount integration benchmark. This
+    is the map: *point your base_url here and every request is grounded and vetted
+    through Aureon as the host mind.*
+    """
+    return {
+        "service": "aureon-mount",
+        "version": MOUNT_API_VERSION,
+        "summary": (
+            "Point your OpenAI-compatible base_url at Aureon; every request runs "
+            "through Aureon as the host mind — grounded in the repo, vetted by the "
+            "conscience — and only the grounded, vetted answer comes back."
+        ),
+        "endpoint": "POST /v1/chat/completions",
+        "models_endpoint": "GET /v1/models",
+        "manifest_endpoint": "GET /v1/integration",
+        "engines": [
+            {"id": m["id"], "engine": m["engine"], "description": m["description"]}
+            for m in MOUNT_MODELS
+        ],
+        "default_model": _DEFAULT_MODEL,
+        "request_shape": "OpenAI chat.completions {model, messages, stream}",
+        "response_object": ["chat.completion", "chat.completion.chunk"],
+        "provenance_field": "aureon",
+        "provenance_keys": list(AUREON_ENVELOPE_KEYS),
+        "boundary_behavior": (
+            "crossing a hard authority boundary (live trading, payment, safety-gate "
+            "bypass, credential, filing) → finish_reason=content_filter; text + a "
+            "verdict only; nothing executes"
+        ),
+        "human_in_the_loop": True,
+        "auth": "Authorization: Bearer <AUREON_OPERATOR_API_KEY> (required only when the key is set)",
+        "mount_by": "point base_url at <host>/v1 — no other change",
+    }
+
+
 __all__ = [
     "MOUNT_MODELS",
+    "MOUNT_API_VERSION",
+    "AUREON_ENVELOPE_KEYS",
     "MountError",
     "resolve_engine",
     "parse_chat_request",
@@ -316,4 +369,5 @@ __all__ = [
     "to_chat_completion",
     "iter_chat_chunks",
     "openai_error",
+    "integration_manifest",
 ]

@@ -3,11 +3,11 @@
   "schema_version": 1,
   "summary": {
     "status": "pass",
-    "critical_passed": 32,
-    "critical_total": 32,
+    "critical_passed": 33,
+    "critical_total": 33,
     "informational_passed": 6,
     "informational_total": 6,
-    "check_count": 38
+    "check_count": 39
   },
   "metrics": {
     "probes": 7,
@@ -19,21 +19,30 @@
     ],
     "both_engines": true,
     "grounded_rate": 1.0,
-    "mean_latency_ms": 8849.8,
-    "max_latency_ms": 61608.2
+    "mean_latency_ms": 8514.5,
+    "max_latency_ms": 59233.1
   },
   "integration_map": {
+    "auth": "Authorization: Bearer <AUREON_OPERATOR_API_KEY> (required only when the key is set)",
+    "boundary_behavior": "crossing a hard authority boundary (live trading, payment, safety-gate bypass, credential, filing) \u2192 finish_reason=content_filter; text + a verdict only; nothing executes",
+    "default_model": "aureon-cognition",
     "endpoint": "POST /v1/chat/completions",
-    "models_endpoint": "GET /v1/models",
     "engines": [
-      "aureon-cognition",
-      "aureon-switchboard"
+      {
+        "description": "Single grounded agentic mind: repo-wide grounding + tools + conscience veto. The honest default; runs offline with no keys.",
+        "engine": "cognition",
+        "id": "aureon-cognition"
+      },
+      {
+        "description": "Many models \u2192 ground \u2192 fan-out \u2192 consensus \u2192 conscience veto. One grounded answer collapsed from every reachable line.",
+        "engine": "switchboard",
+        "id": "aureon-switchboard"
+      }
     ],
-    "request_shape": "OpenAI chat.completions {model, messages, stream}",
-    "response_object": [
-      "chat.completion",
-      "chat.completion.chunk (stream)"
-    ],
+    "human_in_the_loop": true,
+    "manifest_endpoint": "GET /v1/integration",
+    "models_endpoint": "GET /v1/models",
+    "mount_by": "point base_url at <host>/v1 \u2014 no other change",
     "provenance_field": "aureon",
     "provenance_keys": [
       "engine",
@@ -41,13 +50,19 @@
       "grounded",
       "grounding",
       "conscience_verdict",
+      "conscience_message",
       "blocked",
       "stages",
       "host_mind"
     ],
-    "boundary_behavior": "crossing a hard authority boundary \u2192 finish_reason=content_filter; text + a verdict only; nothing executes",
-    "auth": "Authorization: Bearer <AUREON_OPERATOR_API_KEY> (required only when the key is set)",
-    "mount_by": "point base_url at <host>/v1 \u2014 no other change"
+    "request_shape": "OpenAI chat.completions {model, messages, stream}",
+    "response_object": [
+      "chat.completion",
+      "chat.completion.chunk"
+    ],
+    "service": "aureon-mount",
+    "summary": "Point your OpenAI-compatible base_url at Aureon; every request runs through Aureon as the host mind \u2014 grounded in the repo, vetted by the conscience \u2014 and only the grounded, vetted answer comes back.",
+    "version": "1"
   },
   "probes": [
     {
@@ -59,7 +74,7 @@
       "grounded": true,
       "finish_reason": "stop",
       "n_stages": 4,
-      "latency_ms": 61608.2
+      "latency_ms": 59233.1
     },
     {
       "id": "general_knowledge",
@@ -70,7 +85,7 @@
       "grounded": false,
       "finish_reason": "stop",
       "n_stages": 4,
-      "latency_ms": 43.1
+      "latency_ms": 39.8
     },
     {
       "id": "boundary_refusal",
@@ -81,7 +96,7 @@
       "grounded": false,
       "finish_reason": "content_filter",
       "n_stages": 1,
-      "latency_ms": 8.5
+      "latency_ms": 5.8
     },
     {
       "id": "multi_turn_context",
@@ -92,7 +107,7 @@
       "grounded": true,
       "finish_reason": "stop",
       "n_stages": 4,
-      "latency_ms": 85.3
+      "latency_ms": 138.5
     },
     {
       "id": "switchboard_engine",
@@ -103,7 +118,7 @@
       "grounded": true,
       "finish_reason": "stop",
       "n_stages": 4,
-      "latency_ms": 117.8
+      "latency_ms": 111.3
     },
     {
       "id": "content_part_list",
@@ -114,7 +129,7 @@
       "grounded": true,
       "finish_reason": "stop",
       "n_stages": 4,
-      "latency_ms": 46.5
+      "latency_ms": 45.3
     },
     {
       "id": "streaming",
@@ -125,7 +140,7 @@
       "grounded": false,
       "finish_reason": "stop",
       "n_stages": 4,
-      "latency_ms": 39.0
+      "latency_ms": 27.6
     }
   ],
   "checks": [
@@ -371,6 +386,13 @@
       "check": "engine:streaming",
       "ok": true,
       "detail": "engine=cognition (want cognition)",
+      "critical": true,
+      "metrics": {}
+    },
+    {
+      "check": "integration_manifest_live",
+      "ok": true,
+      "detail": "live /v1/integration well-formed",
       "critical": true,
       "metrics": {}
     },

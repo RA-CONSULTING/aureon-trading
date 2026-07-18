@@ -14,6 +14,7 @@ Routes:
   POST /api/operator/respond   one-shot JSON (OperatorResponse.to_dict())
   POST /v1/chat/completions    the Mount — OpenAI-compatible front door (any flagship model → Aureon)
   GET  /v1/models              the Mount's model catalogue (aureon-cognition, aureon-switchboard)
+  GET  /v1/integration         self-describing integration manifest (also /.well-known/aureon-mount.json)
   GET  /api/pulse              composed read-only vitals (line-up + status + organism)
   GET  /healthz                liveness + active provider line-up
 
@@ -474,6 +475,16 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         from aureon.operator.mount import MOUNT_MODELS
 
         return jsonify({"object": "list", "data": MOUNT_MODELS})
+
+    # The self-describing integration map — an AGI system GETs this to auto-discover
+    # how to mount (contract, engines, provenance keys, boundary, auth). Served at a
+    # /v1 path (same auth posture) and a /.well-known discovery alias (open metadata).
+    @app.get("/v1/integration")
+    @app.get("/.well-known/aureon-mount.json")
+    def v1_integration():
+        from aureon.operator.mount import integration_manifest
+
+        return jsonify(integration_manifest())
 
     @app.post("/v1/chat/completions")
     def v1_chat_completions():

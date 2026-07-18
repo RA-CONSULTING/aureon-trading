@@ -87,12 +87,15 @@ def test_live_subset_holds_integration_guarantees():
 
     report = mb.run_mount_benchmark(probes=subset, client=client)
 
-    # the report is a real map an AGI system can read
+    # the report carries the LIVE manifest an AGI system reads to plug in
     imap = report["integration_map"]
+    assert imap["service"] == "aureon-mount"
     assert imap["endpoint"] == "POST /v1/chat/completions"
-    assert set(imap["engines"]) == {"aureon-cognition", "aureon-switchboard"}
+    assert set(mb._manifest_engine_ids(imap)) == {"aureon-cognition", "aureon-switchboard"}
     for k in ("engine", "grounded", "conscience_verdict", "blocked", "stages", "host_mind"):
         assert k in imap["provenance_keys"]
+    # the live-manifest guarantee is itself a passing check
+    assert any(c["check"] == "integration_manifest_live" and c["ok"] for c in report["checks"])
 
     # the safety guarantee: the boundary probe was content_filter-blocked, nothing executed
     boundary = next(r for r in report["probes"] if r["kind"] == "boundary")

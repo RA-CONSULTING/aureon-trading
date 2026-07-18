@@ -26,12 +26,11 @@ import json
 import time
 from typing import Any, Dict, List
 
+from aureon.operator.mount import AUREON_ENVELOPE_KEYS
+
 # The provenance keys every mounted response must carry — the contract an external
-# model relies on. Asserted per-probe; published in the integration map.
-_AUREON_KEYS = (
-    "engine", "trace_id", "grounded", "grounding",
-    "conscience_verdict", "blocked", "stages", "host_mind",
-)
+# model relies on. Single source of truth in mount.py; asserted per-probe here.
+_AUREON_KEYS = AUREON_ENVELOPE_KEYS
 
 
 def _probe(
@@ -208,27 +207,41 @@ def _grade_stream(probe: Dict[str, Any], status: int, text: str) -> tuple[List[D
     return checks, metrics
 
 
-def _integration_map(client: Any) -> Dict[str, Any]:
-    """The machine-readable contract an AGI system reads to integrate — proven live
-    against GET /v1/models, not asserted from memory."""
+_MANIFEST_REQUIRED = ("service", "version", "endpoint", "engines", "request_shape",
+                      "response_object", "provenance_field", "provenance_keys",
+                      "boundary_behavior", "mount_by")
+
+
+def _fetch_manifest(client: Any) -> tuple[Dict[str, Any], bool, str]:
+    """GET the live integration manifest — the map an AGI system reads to plug in.
+
+    Proven against the running ``GET /v1/integration`` endpoint, not asserted from
+    memory. Returns (manifest, well_formed, detail). Falls back to the static
+    contract if the endpoint is unreachable, so the report always carries a map.
+    """
+    from aureon.operator.mount import integration_manifest
+
     try:
-        models = client.get("/v1/models").get_json()
-        engine_ids = [m["id"] for m in models.get("data", [])]
-    except Exception:  # noqa: BLE001
-        engine_ids = []
-    return {
-        "endpoint": "POST /v1/chat/completions",
-        "models_endpoint": "GET /v1/models",
-        "engines": engine_ids,
-        "request_shape": "OpenAI chat.completions {model, messages, stream}",
-        "response_object": ["chat.completion", "chat.completion.chunk (stream)"],
-        "provenance_field": "aureon",
-        "provenance_keys": list(_AUREON_KEYS),
-        "boundary_behavior": "crossing a hard authority boundary → finish_reason=content_filter; "
-                             "text + a verdict only; nothing executes",
-        "auth": "Authorization: Bearer <AUREON_OPERATOR_API_KEY> (required only when the key is set)",
-        "mount_by": "point base_url at <host>/v1 — no other change",
-    }
+        resp = client.get("/v1/integration")
+        manifest = resp.get_json() if resp.status_code == 200 else None
+    except Exception as exc:  # noqa: BLE001
+        return integration_manifest(), False, f"live fetch failed: {exc}"
+    if not isinstance(manifest, dict):
+        return integration_manifest(), False, "live /v1/integration did not return an object"
+    missing = [k for k in _MANIFEST_REQUIRED if k not in manifest]
+    ok = not missing and manifest.get("service") == "aureon-mount"
+    detail = "live /v1/integration well-formed" if ok else f"missing keys: {missing}"
+    return manifest, ok, detail
+
+
+def _manifest_engine_ids(manifest: Dict[str, Any]) -> List[str]:
+    out: List[str] = []
+    for e in manifest.get("engines", []):
+        if isinstance(e, dict) and e.get("id"):
+            out.append(str(e["id"]))
+        elif isinstance(e, str):
+            out.append(e)
+    return out
 
 
 def run_mount_benchmark(*, probes: List[Dict[str, Any]] | None = None,
@@ -264,7 +277,9 @@ def run_mount_benchmark(*, probes: List[Dict[str, Any]] | None = None,
         checks.extend(pchecks)
         rows.append({"id": probe["id"], "kind": probe["kind"], **metrics})
 
-    return build_report(checks, rows, _integration_map(client))
+    manifest, manifest_ok, manifest_detail = _fetch_manifest(client)
+    checks.append(_check("integration_manifest_live", manifest_ok, manifest_detail))
+    return build_report(checks, rows, manifest)
 
 
 def build_report(checks: List[Dict[str, Any]], rows: List[Dict[str, Any]],

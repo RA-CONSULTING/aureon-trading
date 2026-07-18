@@ -217,8 +217,20 @@ AUREON_LLM_OFFLINE=1 python -m scripts.run_mount_benchmark
 # → docs/research/benchmarks/mount_integration_benchmark.{json,md}
 ```
 
-The report's **`integration_map`** block is the machine-readable map an AGI system
-reads to plug in — proven live against `GET /v1/models`, not asserted from memory:
+### Live self-discovery
+
+An AGI system doesn't have to read this doc — the mount **describes itself**. The
+same map is served live, so an integrator GETs it at runtime and self-configures:
+
+```bash
+curl -s http://<host>:8790/v1/integration            # /v1 path — same auth as the API
+curl -s http://<host>:8790/.well-known/aureon-mount.json   # open discovery alias
+```
+
+The manifest is the single source of truth (`aureon/operator/mount.py` ·
+`integration_manifest()`); the benchmark GETs the **live** endpoint and fails if it
+is missing or malformed, so the map and the running service can't drift apart. The
+report's **`integration_map`** block is that same live manifest:
 
 ```json
 {

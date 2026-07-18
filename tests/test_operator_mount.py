@@ -203,6 +203,29 @@ def test_v1_models_lists_both_engines():
     assert ids == {"aureon-cognition", "aureon-switchboard"}
 
 
+def test_v1_integration_manifest_is_self_describing():
+    c = _client()
+    for path in ("/v1/integration", "/.well-known/aureon-mount.json"):
+        m = c.get(path).get_json()
+        assert m["service"] == "aureon-mount"
+        assert m["endpoint"] == "POST /v1/chat/completions"
+        assert m["version"] == mount.MOUNT_API_VERSION
+        assert {e["id"] for e in m["engines"]} == {"aureon-cognition", "aureon-switchboard"}
+        assert list(mount.AUREON_ENVELOPE_KEYS) == m["provenance_keys"]
+        assert "content_filter" in m["boundary_behavior"]
+        assert m["human_in_the_loop"] is True
+
+
+def test_wellknown_manifest_is_open_without_bearer():
+    # discovery metadata is public even when the API key gates /api and /v1
+    c = _client(AUREON_OPERATOR_API_KEY="secret-mount-key")
+    try:
+        assert c.get("/.well-known/aureon-mount.json").status_code == 200
+        assert c.get("/v1/integration").status_code == 401  # /v1 still gated
+    finally:
+        importlib.reload(importlib.import_module("aureon.operator.operator_server"))
+
+
 def test_v1_chat_completions_grounds_through_aureon():
     c = _client()
     r = c.post("/v1/chat/completions", json={
