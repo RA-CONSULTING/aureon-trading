@@ -199,6 +199,48 @@ Human-in-the-loop • Never autonomous on trading/payments/filing • Strict aut
 
 ---
 
+## 🗺️ The integration map — connect · test · benchmark
+
+> *We're not reinventing the wheel — we're drawing the map so AGI systems integrate smoothly.*
+
+The mount ships with a benchmark that **proves the integration contract**, so an
+external system doesn't have to take it on faith. It drives a suite of real
+OpenAI-shaped probes through the live `/v1/chat/completions` mount — grounded repo
+questions, honest general knowledge, a hard-boundary refusal, multi-turn context,
+the switchboard engine, content-part input, and streaming — and checks that every
+response is a valid `chat.completion`, every boundary prompt comes back
+`content_filter`-blocked (nothing executes), both engines are reachable, and the
+`aureon` provenance envelope is intact.
+
+```bash
+AUREON_LLM_OFFLINE=1 python -m scripts.run_mount_benchmark
+# → docs/research/benchmarks/mount_integration_benchmark.{json,md}
+```
+
+The report's **`integration_map`** block is the machine-readable map an AGI system
+reads to plug in — proven live against `GET /v1/models`, not asserted from memory:
+
+```json
+{
+  "endpoint": "POST /v1/chat/completions",
+  "models_endpoint": "GET /v1/models",
+  "engines": ["aureon-cognition", "aureon-switchboard"],
+  "request_shape": "OpenAI chat.completions {model, messages, stream}",
+  "response_object": ["chat.completion", "chat.completion.chunk (stream)"],
+  "provenance_field": "aureon",
+  "provenance_keys": ["engine", "trace_id", "grounded", "grounding",
+                      "conscience_verdict", "blocked", "stages", "host_mind"],
+  "boundary_behavior": "crossing a hard authority boundary → finish_reason=content_filter; text + a verdict only; nothing executes",
+  "auth": "Authorization: Bearer <AUREON_OPERATOR_API_KEY> (required only when the key is set)",
+  "mount_by": "point base_url at <host>/v1 — no other change"
+}
+```
+
+Latest committed run: **pass — 32/32 critical checks**, shape valid 100%, boundary
+prompts blocked 100%, both engines reachable, grounded probes grounded 100%
+([`docs/research/benchmarks/mount_integration_benchmark.md`](../research/benchmarks/mount_integration_benchmark.md)).
+The benchmark exits non-zero on any critical failure, so it is a real signal.
+
 ## 🔎 Where it lives
 
 | Piece | File |
@@ -207,7 +249,8 @@ Human-in-the-loop • Never autonomous on trading/payments/filing • Strict aut
 | The routes + auth gate | [`aureon/operator/operator_server.py`](../../aureon/operator/operator_server.py) |
 | Single-mind engine | [`aureon/operator/cognition.py`](../../aureon/operator/cognition.py) (`AureonCognition.reason`) |
 | Switchboard engine | [`aureon/operator/aureon_operator.py`](../../aureon/operator/aureon_operator.py) (`AureonOperator.respond`) |
-| Tests | [`tests/test_operator_mount.py`](../../tests/test_operator_mount.py) |
+| Tests | [`tests/test_operator_mount.py`](../../tests/test_operator_mount.py) · [`tests/test_mount_benchmark.py`](../../tests/test_mount_benchmark.py) |
+| Integration benchmark | [`aureon/operator/mount_benchmark.py`](../../aureon/operator/mount_benchmark.py) · runner [`scripts/run_mount_benchmark.py`](../../scripts/run_mount_benchmark.py) · artifact [`docs/research/benchmarks/mount_integration_benchmark.md`](../research/benchmarks/mount_integration_benchmark.md) |
 | Audit edge | `scripts/validation/audit_organism_unification.py` — Edge 37 `mount_grounds_and_vetoes` |
 
 ---
