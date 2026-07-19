@@ -1,0 +1,76 @@
+# Human-Harmonic Proxy — a derived-signal probe on the phenolic engine
+
+*Module: [`aureon/bio/human_harmonic_proxy.py`](../../aureon/bio/human_harmonic_proxy.py).
+Deterministic: seeded, offline-safe, pure stdlib + numpy + the engine.*
+
+## What this is (and what it is not)
+
+The Aureon Operator human-harmonic proxy takes a **human-derived frequency
+series** and scores it with the **same falsifiable machinery** that judges a
+molecule's spectrum in [`phenolic_fingerprint.py`](../../phenolic_fingerprint.py).
+It is a probe for *statistical structure in a derived signal representation* — the
+exact same Test A / Test B / controls protocol, now pointed at a signal that came
+from a person instead of a molecule.
+
+It is **not** a biosensor, an "aura reader", a diagnosis, or a personality/health
+instrument. It measures nothing about a human being and makes **no efficacy
+claim**. That boundary is not a disclaimer bolted on afterwards — it is enforced
+in code, and the following sentence rides on every result and every emission:
+
+> **Statistical structure in a derived signal only — NOT a measurement of a
+> biological aura, field, health, or trait of any person; no efficacy claim.**
+
+## Same engine, same honesty guarantees
+
+Reusing the pre-registered engine verbatim means the human-signal path inherits
+its falsifiability. Nothing here tunes a threshold or alters a test.
+
+| Guarantee | How it is enforced |
+|-----------|--------------------|
+| **Same statistical tests** | Calls `engine.test_A` (coherence clustering) and `engine.test_B` (golden-interval alignment) directly on the modulation tones. `structure_present` ⇔ the engine's `separable` (both reject the null at `ALPHA = 0.05`). |
+| **Mandatory controls or the run is invalid** | Calls `engine.positive_control` (a structured signal must be detected) and `engine.negative_control` (noise must not over-fire) *before* scoring. If either fails, the run is `valid = False` and no structure result is emitted. |
+| **No efficacy claims** | Output is only *structure present / absent in a derived signal*. Consent + a provenance string are **required inputs** — without them the run is blocked and scores nothing. The `SCIENTIFIC_BOUNDARY` string is inseparable from every `ProxyResult`. |
+| **Everything routes through the Operator** | Every run passes through the operator's deterministic hard-boundary check (`aureon/operator/aureon_operator.py:_hard_boundary_violation`) **and** the Queen's conscience veto (`aureon/queen/queen_conscience.py:QueenConscience.ask_why`) before anything is emitted. A `VETO` blocks the run; if either authority layer cannot be consulted, the run **fails safe (blocked)** — never silently passed. A blocked run's positive finding is suppressed in `to_dict()`, so it can never be published. |
+
+## bio → vibe, honestly
+
+A human signal is already in Hz, so the engine's molecular `cm⁻¹`/`nm`
+downconversion (`peak_to_modulation_hz`) does **not** apply. The proxy instead
+octave-folds each raw tone into the engine's `1000–2000 Hz` modulation band with
+its own `fold_to_band` (repeated ×/÷2), then hands the folded array to the engine's
+statistics. The fold is the identity for an in-band value and drops non-finite /
+non-positive inputs.
+
+## What ships now, and what is deliberately deferred
+
+This release ships the **interface + governance backbone**, proven by a
+**synthetic self-test that uses no real human data**:
+
+- `SignalAdapter` — the protocol every future extractor must implement.
+- `SyntheticSignalAdapter` — deterministic `structured` / `noise` modes that
+  exercise the "present" and "absent" paths.
+- `fold_to_band`, `score_signal`, `ProxyResult`, the Operator/conscience gate, and
+  `emit_proxy_result` (publishes `bio.human_proxy.run` on the ThoughtBus + a
+  `human_harmonic_proxy` bus_trace, mirroring `aureon/cognition/phenolic_bridge.py`).
+
+Real **video / audio / image** extractors are **future, gated, consent-required
+work** and are intentionally **not** built here. They will implement the
+`SignalAdapter` seam so the scoring and governance path never changes — and they
+will only be built with explicit consent handling, provenance capture, and the
+same boundary enforced above.
+
+## Run it
+
+```bash
+# Synthetic self-test — controls valid, structured⇒present, noise⇒absent,
+# unconsented⇒blocked, boundary on every result.
+python -m aureon.bio.human_harmonic_proxy
+
+# Tests
+AUREON_LLM_OFFLINE=1 AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS=1 \
+  pytest tests/bio/test_human_harmonic_proxy.py -q
+```
+
+The self-test is the end-to-end proof: the same engine, the same controls
+enforced, the consent gate and Operator veto active, and the scientific-boundary
+statement inseparable from every result.
