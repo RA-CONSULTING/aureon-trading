@@ -253,6 +253,21 @@ prompts blocked 100%, both engines reachable, grounded probes grounded 100%
 ([`docs/research/benchmarks/mount_integration_benchmark.md`](../research/benchmarks/mount_integration_benchmark.md)).
 The benchmark exits non-zero on any critical failure, so it is a real signal.
 
+## 🖥️ On the platform — SaaS surface + console
+
+The Mount is a **first-class, active SaaS surface**, not just a raw endpoint. The
+same live manifest is served under the SaaS gateway at **`GET /api/mount`**
+(`aureon/saas/gateway.py`) — same-origin, provenance-stamped (`truth_status:
+real_derived`), and auto-metered like every other `/api/*` read. This is the
+addressable, active link the platform exposes (and the URL the console fetches —
+nginx proxies `/api/`, not `/v1/`, so the console reads the manifest here).
+
+The console picks it up on a dedicated page — **Aureon Mount** at
+`/cognition/mount` (`frontend/src/shell/pages/MountPage.tsx`, nav entry in
+`frontend/src/shell/nav.ts`): it renders the base-URL swap (copyable), a ready
+curl, the engines, and the full contract (provenance keys, boundary behaviour,
+auth) — so an operator sees the Mount is live and how to plug a model client in.
+
 ## 🔎 Where it lives
 
 | Piece | File |
