@@ -53,11 +53,45 @@ This release ships the **interface + governance backbone**, proven by a
   `emit_proxy_result` (publishes `bio.human_proxy.run` on the ThoughtBus + a
   `human_harmonic_proxy` bus_trace, mirroring `aureon/cognition/phenolic_bridge.py`).
 
-Real **video / audio / image** extractors are **future, gated, consent-required
-work** and are intentionally **not** built here. They will implement the
-`SignalAdapter` seam so the scoring and governance path never changes — and they
-will only be built with explicit consent handling, provenance capture, and the
+The first **real** adapter now ships (see below); remaining **video / audio**
+extractors stay **future, gated, consent-required work**. Every adapter implements
+the `SignalAdapter` seam so the scoring and governance path never changes — and
+each is built only with explicit consent handling, provenance capture, and the
 same boundary enforced above.
+
+## Image adapter (shipped — content-agnostic)
+
+`aureon/bio/image_signal_adapter.py` is the first real `SignalAdapter`. It turns
+an image into a derived frequency series and scores it through the *unchanged*
+`score_signal` pipeline — **without becoming a face or "aura" reader.**
+
+- **Content-agnostic by construction.** The signal comes from the image's **global
+  colour statistics only** — the dominant spectral hues across the whole frame.
+  There is no face detection, no landmark extraction, and no per-region/per-person
+  analysis anywhere in the module. That makes it *structurally* incapable of
+  physiognomy regardless of what the picture contains. Colour is not identity.
+- **Physics reused, not invented.** A colour *is* an electromagnetic frequency.
+  Each dominant spectral hue maps to its visible wavelength (nm) and then to an EM
+  frequency (Hz) using the engine's own molecular constants
+  (`NM_TO_THZ_NUMERATOR` / `THZ_TO_HZ`). `fold_to_band` then octave-folds those
+  ~10¹⁴ Hz light frequencies into the 1000–2000 Hz band — the same octave-fold the
+  engine performs for molecular peaks. Achromatic pixels (grey/black/white) and
+  non-spectral hues (magenta/pink) are dropped, so an image with no clear spectral
+  colour honestly yields "insufficient tones" rather than a fabricated result.
+- **Every guardrail still applies.** Consent + provenance are *required arguments*
+  to `extract`/`score_image`, the mandatory engine controls run, the Operator
+  hard-boundary + conscience veto gate the emission, and the `SCIENTIFIC_BOUNDARY`
+  rides on every result. Output is only *statistical structure in a derived
+  signal* — never a claim about a person.
+
+```bash
+# Score an image the caller consents to (content-agnostic, no face analysis):
+python -m aureon.bio.image_signal_adapter path/to/image.png \
+    --consent --provenance "my own photo, consented"
+
+# Without --consent the run is blocked and scores nothing.
+python -m aureon.bio.image_signal_adapter path/to/image.png
+```
 
 ## Run it
 
