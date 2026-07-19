@@ -30,6 +30,7 @@ pre-registered test returned for each, neutrally. The φ engine is never modifie
 | Master Formula Λ(t) | HNC substrate (6 modes) | `harmonic_core_scan` |
 | Celtic Ogham | tree-tones (φ-scaled) | `harmonic_core_scan` |
 | Ghost Dance | ancestral (Solfeggio) | `harmonic_core_scan` |
+| Counter-frequency | φ/Fibonacci canon | `counter_frequency_scan` |
 | All-sky map | RA/Dec convergence | `sky_map` (summary) |
 | Sacred-lattice map | Earth grid convergence | `sky_map` (summary) |
 
@@ -61,8 +62,9 @@ Reported exactly as the engine outputs them, neutrally (seed-fixed, deterministi
 | Master Formula Λ(t) | 6 | 1.000 | 0.384 | False |
 | Celtic Ogham | 15 | 0.841 | 0.715 | False |
 | Ghost Dance | 9 | 1.000 | 0.709 | False |
+| Counter-frequency | 16 | 0.324 | 0.066 | False |
 
-**15/15 lanes valid**; the all-sky map reports **4 converged cells of 63 scored** and the sacred-lattice Earth-grid map **0 of 9 scored**.
+**16/16 lanes valid**; the all-sky map reports **4 converged cells of 63 scored** and the sacred-lattice Earth-grid map **0 of 9 scored**.
 Every number is the engine's own verdict — the observatory makes no claim beyond
 tabulating them.
 
@@ -85,6 +87,6 @@ python -m aureon.bio.celestial_observatory --emit          # publish to cognitio
 ```
 
 Benchmarked as Tier-A invariants **b20 "φ Celestial Observatory"** and
-**b21 "Observatory → cognition"** (plus **b22 "Sacred lattice"** and **b23 "Harmonic core"**) in `tests/benchmarks/benchmark_aureon_scope.py`
-(Tier-A 23/23). Fully offline; lanes whose data is absent degrade to a skipped reading
+**b21 "Observatory → cognition"** (plus **b22 "Sacred lattice"** and **b23 "Harmonic core"** / **b24 "Counter-frequency"**) in `tests/benchmarks/benchmark_aureon_scope.py`
+(Tier-A 24/24). Fully offline; lanes whose data is absent degrade to a skipped reading
 so it runs anywhere. See [SENSOR_SUITE.md](SENSOR_SUITE.md) for the per-lane catalog.

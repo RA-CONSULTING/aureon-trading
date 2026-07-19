@@ -1710,6 +1710,58 @@ def b23_harmonic_core(tmp_root: Path) -> Dict[str, Any]:
 
 
 
+def b24_counter_frequency(tmp_root: Path) -> Dict[str, Any]:
+    """The repo's OWN φ/Fibonacci harmonic canon scans through the engine, φ logic
+    unchanged: the counter-frequency engine's SACRED_FREQUENCIES canon (and its
+    Fibonacci-ladder and φ-harmonic subsets) fold into the band and scan to a valid
+    deterministic result, the consent gate blocks, the distinctive Fibonacci and
+    golden-ratio tones are present, and no person-reading surface exists.
+    """
+    from aureon.bio import counter_frequency_reference as cf
+    from aureon.bio import counter_frequency_scan as cfs
+
+    scans = {name: cfs.score_counter_frequency(name, nulls=120, seed=0)
+             for name in ("counter", "fibonacci", "phi")}
+    again = cfs.score_counter_frequency("counter", nulls=120, seed=0)
+    blocked = cfs.score_counter_frequency("counter", consent=False, provenance="x", nulls=100)
+
+    fib = set(cf.fibonacci_hz())
+    phi_first = cf.phi_harmonic_hz()[0]
+
+    surface = [n.lower() for n in dir(cfs)]
+    banned = ("face", "landmark", "detect", "emotion", "biometric", "recognize")
+
+    invariants = {
+        "all_scans_valid": all(r.valid and r.n_tones >= 2 for r in scans.values()),
+        "deterministic": (scans["counter"].test_A_p, scans["counter"].test_B_p)
+        == (again.test_A_p, again.test_B_p),
+        "consent_gate_blocks": blocked.blocked and not blocked.structure_present,
+        "fibonacci_ladder_present": fib == {8.0, 13.0, 21.0, 34.0},
+        "phi_harmonic_present": abs(phi_first - cf.PHI) < 1e-9,
+        "no_person_surface": not any(b in n for b in banned for n in surface),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Counter-frequency (repo's φ/Fibonacci canon; φ logic unchanged)",
+        "module": "aureon/bio/counter_frequency_scan.py",
+        "passed": passed,
+        "metrics": {
+            "counter_tones": scans["counter"].n_tones,
+            "fibonacci_tones": scans["fibonacci"].n_tones,
+            "phi_tones": scans["phi"].n_tones,
+        },
+        "evidence": (
+            f"counter/fibonacci/phi scans valid "
+            f"({scans['counter'].n_tones}/{scans['fibonacci'].n_tones}/"
+            f"{scans['phi'].n_tones} tones); Fibonacci ladder + φ-harmonics present; "
+            f"consent gate blocks; no person surface"
+        ),
+        "invariants": invariants,
+    }
+
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1739,6 +1791,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Observatory → cognition",     b21_observatory_cognition),
     ("Sacred lattice",               b22_sacred_lattice),
     ("Harmonic core",                b23_harmonic_core),
+    ("Counter-frequency",            b24_counter_frequency),
 ]
 
 

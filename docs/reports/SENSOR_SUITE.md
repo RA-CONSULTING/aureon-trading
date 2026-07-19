@@ -34,10 +34,11 @@ pre-registered test returns it.
 | Coherence | `coherence_scan.py` | `sky` | SCIENTIFIC_BOUNDARY | `de440_gate3_coherence.csv` | **b19** |
 | Sacred lattice (stargate/Maeshowe/Metatron) | `sacred_lattice_scan.py` | `sky` | SACRED_LATTICE_BOUNDARY | repo's own site coords + φ-geometry + Solfeggio/Schumann | **b22** |
 | Harmonic core (Λ(t)/Ogham/Ghost Dance) | `harmonic_core_scan.py` | `sky` | HARMONIC_CORE_BOUNDARY | repo's own HNC Master-Formula modes + Celtic Ogham + ancestral Solfeggio | **b23** |
+| Counter-frequency (φ/Fibonacci canon) | `counter_frequency_scan.py` | `sky` | COUNTER_FREQUENCY_BOUNDARY | repo's own Fibonacci-ladder + φ-harmonic + Solfeggio canon | **b24** |
 | **φ Celestial Observatory** | `celestial_observatory.py` | (orchestrator) | OBSERVATORY_BOUNDARY | every sky/cosmic lane above | **b20** |
 
 Reference/data modules (no governance surface): `upe_reference.py`,
-`sky_reference.py`, `market_reference.py`, `cosmic_reference.py`, `sacred_lattice_reference.py`, `harmonic_core_reference.py`.
+`sky_reference.py`, `market_reference.py`, `cosmic_reference.py`, `sacred_lattice_reference.py`, `harmonic_core_reference.py`, `counter_frequency_reference.py`.
 
 The **φ Celestial Observatory** (`celestial_observatory.py`) is the capstone: it
 operates every sky-facing lane at once through the one unchanged engine, renders one
@@ -49,7 +50,7 @@ The **sacred lattice** (`sacred_lattice_scan.py`) is how the repo maps the sky *
 
 The **harmonic core** (`harmonic_core_scan.py`) goes one level deeper still — to the frequency substrate the framework itself is built on: the HNC **Master Formula Λ(t)** modes, the **Celtic Ogham** φ-scaled tree-tones, and the **Ghost Dance** ancestral Solfeggio ladder, each scanned through the same engine. See [HARMONIC_CORE.md](HARMONIC_CORE.md).
 
-† b9 is the phenolic→cognition bridge; b10–b23 are the bio lanes. Tier-A total: **23**.
+† b9 is the phenolic→cognition bridge; b10–b24 are the bio lanes. Tier-A total: **24**.
 
 ## Shared invariants (asserted per lane)
 
@@ -64,11 +65,11 @@ face/landmark/detect/emotion/biometric/recognize). Convenience helpers that defa
 
 `HUMAN_HARMONIC_PROXY.md` · `UPE_DATA_AVAILABILITY.md` · `SKY_FINGERPRINT.md` ·
 `FAINT_SKY_UPE.md` · `NASA_SKY_DATA.md` · `MARKET_FINGERPRINT.md` ·
-`QGITA_CALIBRATION.md` · `SKY_MAP.md` · `COSMIC_SENSORS.md` · `COHERENCE_LANE.md` · `SACRED_LATTICE.md` · `HARMONIC_CORE.md`.
+`QGITA_CALIBRATION.md` · `SKY_MAP.md` · `COSMIC_SENSORS.md` · `COHERENCE_LANE.md` · `SACRED_LATTICE.md` · `HARMONIC_CORE.md` · `COUNTER_FREQUENCY.md`.
 
 ## Run the whole suite
 
 ```bash
 AUREON_LLM_OFFLINE=1 AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS=1 pytest tests/bio/ -q
-python tests/benchmarks/benchmark_aureon_scope.py     # Tier-A 23/23
+python tests/benchmarks/benchmark_aureon_scope.py     # Tier-A 24/24
 ```
