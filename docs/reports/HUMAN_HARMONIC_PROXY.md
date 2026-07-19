@@ -93,6 +93,36 @@ python -m aureon.bio.image_signal_adapter path/to/image.png \
 python -m aureon.bio.image_signal_adapter path/to/image.png
 ```
 
+## Image harmonic overlay (photon → geometry → composite)
+
+`aureon/bio/image_harmonic_overlay.py` is the creative end of the pipeline:
+**send an image → extract its photon (colour) data → analyze through the engine →
+build a geometric harmonic pattern → layer it over the source → recompile** into
+one composite PNG.
+
+- **Art from data, not a claim.** The overlay is a *derived geometric figure
+  computed from the image's global colour statistics* — never a measurement, aura,
+  or trait of any person. Every composite carries the `SCIENTIFIC_BOUNDARY`
+  sentence baked in as a visible caption, and a **blocked or invalid analysis
+  renders no harmonic pattern** (it cannot produce a "reading").
+- **Every drawn element ties to the engine's statistics.** A φ-scaled concentric-
+  ring scaffold represents the modulation band; one radial ray per tone; filled
+  coherence-node polygons are Test A (clustering); φ-interval chords are Test B
+  (golden-interval alignment). It reuses `blueprints.cluster_coherence_nodes` and
+  the validated palette.
+- **Same guardrails.** Consent + provenance required; controls + Operator +
+  conscience veto gate the analysis; content-agnostic (no face/landmark logic).
+  Deterministic — the same image yields a byte-identical composite.
+
+```bash
+# Recompile a consented image with its harmonic overlay:
+python -m aureon.bio.image_harmonic_overlay path/to/image.png \
+    --consent --provenance "my own photo, consented" --out composite.png
+
+# Without --consent it renders no pattern and writes nothing.
+python -m aureon.bio.image_harmonic_overlay path/to/image.png
+```
+
 ## Run it
 
 ```bash
