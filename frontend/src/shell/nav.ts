@@ -47,6 +47,9 @@ export interface NavItem {
   Component: ComponentType;
   /** Needs a live backend (WS bridge / Supabase / gateway) — shown as a badge. */
   live?: boolean;
+  /** Retired from the sidebar/command palette but still routable (deep links
+   *  and legacy hash redirects keep working). */
+  hidden?: boolean;
 }
 
 export interface NavSection {
@@ -95,9 +98,12 @@ export const NAV_SECTIONS: NavSection[] = [
       {
         path: "/platform/console",
         label: "Legacy Console",
-        description: "The original nine-tab operational console",
+        description: "The original nine-tab operational console (superseded by the shell)",
         icon: TerminalSquare,
         Component: lazy(() => import("./pages/LegacyConsolePage")),
+        // Retired from the front door: still routed so deep links / legacy #hash
+        // redirects resolve, but hidden from the sidebar + command palette.
+        hidden: true,
       },
     ],
   },
@@ -345,6 +351,13 @@ export const NAV_SECTIONS: NavSection[] = [
 ];
 
 export const ALL_NAV_ITEMS: NavItem[] = NAV_SECTIONS.flatMap((s) => s.items);
+
+/** Sections with hidden items removed and any now-empty section dropped —
+ *  the nav surface the sidebar and command palette render. Routes are still
+ *  generated from ALL_NAV_ITEMS, so hidden pages stay reachable by URL. */
+export const VISIBLE_NAV_SECTIONS: NavSection[] = NAV_SECTIONS
+  .map((s) => ({ ...s, items: s.items.filter((i) => !i.hidden) }))
+  .filter((s) => s.items.length > 0);
 
 export function navItemForPath(pathname: string): NavItem | undefined {
   return ALL_NAV_ITEMS.find((i) => i.path === pathname);

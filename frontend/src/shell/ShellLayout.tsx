@@ -46,7 +46,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { HASH_REDIRECTS, NAV_SECTIONS, navItemForPath, sectionForPath } from "./nav";
+import { HASH_REDIRECTS, VISIBLE_NAV_SECTIONS, navItemForPath, sectionForPath } from "./nav";
 import { PageSkeleton, RouteErrorBoundary } from "./Page";
 import { BackendStatusBanner } from "@/components/BackendStatusBanner";
 
@@ -136,7 +136,7 @@ function CommandPalette() {
         <CommandInput placeholder="Search every surface in the platform…" />
         <CommandList>
           <CommandEmpty>No surface found.</CommandEmpty>
-          {NAV_SECTIONS.map((section) => (
+          {VISIBLE_NAV_SECTIONS.map((section) => (
             <CommandGroup key={section.label} heading={section.label}>
               {section.items.map((item) => (
                 <CommandItem key={item.path} value={`${section.label} ${item.label}`} onSelect={() => go(item.path)}>
@@ -169,7 +169,7 @@ function ShellSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {NAV_SECTIONS.map((section) => (
+        {VISIBLE_NAV_SECTIONS.map((section) => (
           <SidebarGroup key={section.label}>
             <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
             <SidebarGroupContent>
