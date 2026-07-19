@@ -1239,6 +1239,57 @@ def b14_faint_sky_upe(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b15_qgita_calibration(tmp_root: Path) -> Dict[str, Any]:
+    """QGITA calibrates against the φ engine with the engine's logic unchanged: QGITA
+    and the engine share the same φ constant, the engine's φ-alignment arm (Test B)
+    detects QGITA's golden lattice (base·φ^k), the calibrate-by-validation protocol
+    reports CALIBRATED with a separable false-positive rate at/below the ALPHA ceiling,
+    the engine's own controls hold, and the governed Auris scan blocks without consent.
+    No engine threshold is tuned.
+    """
+    import phenolic_fingerprint as engine
+    from aureon.bio import qgita_calibration as qc
+
+    before = (engine.ALPHA, engine.TARGET_BAND_HZ, float(engine.PHI))
+    r1 = qc.calibrate_qgita(nulls=200, seed=0, fpr_trials=100)
+    r2 = qc.calibrate_qgita(nulls=200, seed=0, fpr_trials=100)
+    after = (engine.ALPHA, engine.TARGET_BAND_HZ, float(engine.PHI))
+    unconsented = qc.score_qgita_auris(consent=False, provenance="x", nulls=100)
+    auris = qc.score_qgita_auris(nulls=200)
+
+    se = (engine.ALPHA * (1 - engine.ALPHA) / 100) ** 0.5
+    invariants = {
+        "phi_shared_with_engine": r1.phi_shared_with_engine,
+        "engine_detects_golden_lattice": r1.phi_lattice_detected and r1.phi_lattice_alignment_p < engine.ALPHA,
+        "calibrated": r1.calibrated and r1.controls_valid,
+        "fpr_bounded": r1.empirical_fpr_separable <= engine.ALPHA + 3 * se,
+        "deterministic": r1.to_dict() == r2.to_dict(),
+        "engine_thresholds_unchanged": before == after,
+        "auris_governed": auris.valid and unconsented.blocked and not unconsented.structure_present,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "QGITA ⇄ phenolic-φ calibration (golden lattice; engine unchanged)",
+        "module": "aureon/bio/qgita_calibration.py",
+        "passed": passed,
+        "metrics": {
+            "phi": r1.phi,
+            "phi_lattice_alignment_p": r1.phi_lattice_alignment_p,
+            "empirical_fpr_separable": r1.empirical_fpr_separable,
+            "positive_control_p_A": r1.positive_control_p_A,
+            "auris_A_p": auris.test_A_p,
+        },
+        "evidence": (
+            f"φ shared ({r1.phi:.6f}); engine detects QGITA golden lattice "
+            f"(Test B p={r1.phi_lattice_alignment_p}); CALIBRATED={r1.calibrated} "
+            f"(separable FPR={r1.empirical_fpr_separable}); engine thresholds unchanged; "
+            f"Auris scan governed (consent gate blocks)"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1259,6 +1310,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("NASA sky data",               b12_nasa_sky_data),
     ("Market derived-signal",       b13_market_derived_signal),
     ("Faint sky / UPE-from-sky",    b14_faint_sky_upe),
+    ("QGITA φ calibration",         b15_qgita_calibration),
 ]
 
 
