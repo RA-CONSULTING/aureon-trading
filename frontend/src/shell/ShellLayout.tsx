@@ -49,6 +49,7 @@ import { Separator } from "@/components/ui/separator";
 import { HASH_REDIRECTS, VISIBLE_NAV_SECTIONS, navItemForPath, sectionForPath } from "./nav";
 import { PageSkeleton, RouteErrorBoundary } from "./Page";
 import { BackendStatusBanner } from "@/components/BackendStatusBanner";
+import { LiveVitals } from "@/components/LiveVitals";
 
 type PlatformHealth = "healthy" | "degraded" | "critical" | "unknown";
 
@@ -261,6 +262,7 @@ export default function ShellLayout() {
           <Separator orientation="vertical" className="mr-2 h-4" />
           <ShellBreadcrumb />
           <div className="ml-auto flex items-center gap-3">
+            <LiveVitals />
             {item?.live && (
               <Badge variant="outline" className="hidden text-[10px] sm:inline-flex">
                 live surface

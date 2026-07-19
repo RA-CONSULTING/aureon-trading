@@ -112,12 +112,15 @@ export const api = {
  * Shape is intentionally permissive: fields the backend omits stay optional.
  */
 export interface OperatorPulse {
+  ok?: boolean;
   status?: "healthy" | "degraded" | "critical" | string;
-  generated_at?: string;
-  providers?: { total?: number; live?: number; configured?: number } & Record<string, unknown>;
-  platform?: { status?: string; domains_total?: number } & Record<string, unknown>;
-  organism?: { coverage?: number; edges_live?: number } & Record<string, unknown>;
-  switchboard?: { total?: number; enabled?: number } & Record<string, unknown>;
+  /** Configured LLM providers — a list; its length is the provider count. */
+  providers?: unknown[];
+  switchboard?: { total?: number; enabled?: number; armed?: number } & Record<string, unknown>;
+  organism?: {
+    connectome?: { coverage_pct?: number; nodes?: number; woven?: number } & Record<string, unknown>;
+  } & Record<string, unknown>;
+  service?: unknown;
   [key: string]: unknown;
 }
 

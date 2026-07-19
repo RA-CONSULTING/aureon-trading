@@ -41,6 +41,8 @@ const ORGANISM = {
 const PULSE = {
   ok: true,
   status: "healthy",
+  providers: [{ name: "a" }, { name: "b" }],
+  switchboard: { enabled: 6, total: 15, armed: 1 },
   organism: {
     ...ORGANISM,
     unification: { blended: { coherence_gamma: 0.536, available: true } },
@@ -71,6 +73,12 @@ test("Overview renders REAL backend values when the operator is live", async ({ 
 
   // backend is live → the app-wide offline banner must NOT appear
   await expect(page.getByText(/Operator backend offline/i)).toHaveCount(0);
+
+  // the top-bar LiveVitals strip surfaces real /api/pulse numbers
+  const vitals = page.getByLabel("live operator vitals");
+  await expect(vitals).toContainText("providers");
+  await expect(vitals).toContainText("6/15");     // switchboard enabled/total
+  await expect(vitals).toContainText("1.2%");     // organism coverage_pct 1.17 -> 1.2%
 });
 
 test("Overview degrades honestly (no fabrication) when the backend is down", async ({ page }) => {
