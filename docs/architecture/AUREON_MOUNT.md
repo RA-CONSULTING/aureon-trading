@@ -253,6 +253,34 @@ prompts blocked 100%, both engines reachable, grounded probes grounded 100%
 ([`docs/research/benchmarks/mount_integration_benchmark.md`](../research/benchmarks/mount_integration_benchmark.md)).
 The benchmark exits non-zero on any critical failure, so it is a real signal.
 
+## 🧩 MCP — mount Aureon as a connector/tool
+
+The OpenAI base-URL swap is one door; **MCP (Model Context Protocol)** is the other.
+Instead of pointing a client's `base_url` at Aureon, a user adds Aureon as a
+**connector** in their agent's own UI (Claude Desktop/Code, Cursor, …) and the agent
+calls Aureon's **tools** — no clone, no URL surgery. Every tool runs through the same
+grounded, veto-guarded engines; a boundary-crossing call is refused and nothing
+executes.
+
+**Tools:** `aureon_reason` (grounded single mind) · `aureon_switchboard` (multi-model
+consensus) · `aureon_integration` (the self-describing map).
+
+**Two transports, one handler** (`aureon/operator/mcp.py`):
+
+- **Hosted (cloud):** `POST /mcp` on the operator (JSON-RPC 2.0 / streamable-HTTP),
+  same bearer/rate posture as `/api` and `/v1`. A cloud agent adds the URL
+  `http://<host>:8790/mcp`.
+- **Local (desktop/IDE):** the `aureon-mcp` console script speaks JSON-RPC over
+  stdio. Register it, e.g. Claude Desktop `claude_desktop_config.json`:
+
+  ```json
+  { "mcpServers": { "aureon": { "command": "aureon-mcp" } } }
+  ```
+
+The `mcp` block in `GET /v1/integration` / `.well-known/aureon-mount.json` advertises
+the endpoint, the stdio command, and the tool names, so this surface is discoverable
+alongside the rest of the contract.
+
 ## 🖥️ On the platform — SaaS surface + console
 
 The Mount is a **first-class, active SaaS surface**, not just a raw endpoint. The

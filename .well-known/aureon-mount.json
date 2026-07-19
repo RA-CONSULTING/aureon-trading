@@ -38,5 +38,15 @@
   "boundary_behavior": "crossing a hard authority boundary (live trading, payment, safety-gate bypass, credential, filing) \u2192 finish_reason=content_filter; text + a verdict only; nothing executes",
   "human_in_the_loop": true,
   "auth": "Authorization: Bearer <AUREON_OPERATOR_API_KEY> (required only when the key is set)",
-  "mount_by": "point base_url at <host>/v1 \u2014 no other change"
+  "mount_by": "point base_url at <host>/v1 \u2014 no other change",
+  "mcp": {
+    "endpoint": "POST /mcp",
+    "transport": "streamable-http (JSON-RPC 2.0) + stdio",
+    "stdio_command": "aureon-mcp",
+    "tools": [
+      "aureon_reason",
+      "aureon_switchboard",
+      "aureon_integration"
+    ]
+  }
 }

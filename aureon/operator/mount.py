@@ -355,6 +355,12 @@ def integration_manifest() -> Dict[str, Any]:
         "human_in_the_loop": True,
         "auth": "Authorization: Bearer <AUREON_OPERATOR_API_KEY> (required only when the key is set)",
         "mount_by": "point base_url at <host>/v1 — no other change",
+        "mcp": {
+            "endpoint": "POST /mcp",
+            "transport": "streamable-http (JSON-RPC 2.0) + stdio",
+            "stdio_command": "aureon-mcp",
+            "tools": ["aureon_reason", "aureon_switchboard", "aureon_integration"],
+        },
     }
 
 

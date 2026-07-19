@@ -55,6 +55,23 @@ print(r.choices[0].message.content)         # grounded, vetted
 
 ---
 
+## Or add Aureon as an MCP server (no base_url swap)
+
+Prefer connectors over an OpenAI base_url? Aureon is also a **Model Context Protocol**
+server exposing three tools — `aureon_reason`, `aureon_switchboard`, `aureon_integration`
+— each grounded + vetted.
+
+- **Local (desktop/IDE):** register the `aureon-mcp` stdio command, e.g. Claude Desktop
+  `claude_desktop_config.json`:
+  ```json
+  { "mcpServers": { "aureon": { "command": "aureon-mcp" } } }
+  ```
+- **Hosted (cloud):** add the URL `http://<host>:8790/mcp` (JSON-RPC 2.0 over HTTP;
+  same bearer as `/api` and `/v1`).
+
+Details: the `mcp` block in [`.well-known/aureon-mount.json`](.well-known/aureon-mount.json)
+and [`docs/architecture/AUREON_MOUNT.md`](docs/architecture/AUREON_MOUNT.md).
+
 ## Discover the contract without running anything
 
 - **Static (cloned, not yet running):** read
