@@ -1123,6 +1123,67 @@ def b12_nasa_sky_data(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b13_market_derived_signal(tmp_root: Path) -> Dict[str, Any]:
+    """Market scan holds its control invariants with the engine's φ logic unchanged:
+    an efficient-market (i.i.d.) null (negative-control reference) does NOT over-fire,
+    a planted clustered + φ-spaced cycle set (positive-control reference) IS detected,
+    a real local symbol series scans to a valid deterministic result, and the consent
+    gate blocks an unconsented scan. No claim is asserted about what a real market
+    "should" score — only that the machinery scans a derived market series honestly.
+    """
+    import phenolic_fingerprint as engine
+    from aureon.bio import market_reference as market
+    from aureon.bio.market_signal_adapter import score_market, score_symbol
+
+    prov = "benchmark market control"
+    null = score_market(market.efficient_market_returns(1024, seed=0), consent=True,
+                        provenance=prov, kind="returns", nulls=200)
+    planted = score_market(market.structured_returns(), consent=True, provenance=prov,
+                           kind="returns", sample_rate_hz=8192.0, nulls=200)
+    unconsented = score_market(market.efficient_market_returns(256), consent=False,
+                               provenance="x", kind="returns", nulls=100)
+
+    syms = market.available_symbols()
+    symbol = syms.most_common(1)[0][0] if syms else None
+    real1 = score_symbol(symbol, nulls=200, seed=0) if symbol else None
+    real2 = score_symbol(symbol, nulls=200, seed=0) if symbol else None
+
+    invariants = {
+        "null_negative_ref_no_overfire": null.valid and not null.structure_present,
+        "planted_positive_ref_detected": bool(
+            planted.structure_present
+            and (planted.test_A_p or 1.0) < engine.ALPHA
+            and (planted.test_B_p or 1.0) < engine.ALPHA
+        ),
+        "real_symbol_valid": bool(real1 and real1.valid and real1.n_tones > 0),
+        "real_scan_deterministic": bool(
+            real1 and real2 and (real1.test_A_p, real1.test_B_p) == (real2.test_A_p, real2.test_B_p)
+        ),
+        "consent_gate_blocks": unconsented.blocked and not unconsented.structure_present,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Market derived-signal (scan a market series; φ logic unchanged)",
+        "module": "aureon/bio/market_signal_adapter.py",
+        "passed": passed,
+        "metrics": {
+            "symbol": symbol,
+            "real_A_p": real1.test_A_p if real1 else None,
+            "real_B_p": real1.test_B_p if real1 else None,
+            "real_separable": real1.structure_present if real1 else None,
+            "planted_A_p": planted.test_A_p,
+            "null_over_fire": null.structure_present,
+        },
+        "evidence": (
+            f"efficient-market null quiet; planted positive detected "
+            f"(A_p={planted.test_A_p}); real {symbol} scan valid "
+            f"(separable={real1.structure_present if real1 else None}); consent gate blocks"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1141,6 +1202,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Bio derived-signal",          b10_bio_derived_signal),
     ("Sky derived-signal",          b11_sky_derived_signal),
     ("NASA sky data",               b12_nasa_sky_data),
+    ("Market derived-signal",       b13_market_derived_signal),
 ]
 
 
