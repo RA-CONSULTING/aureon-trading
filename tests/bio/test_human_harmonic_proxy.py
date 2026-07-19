@@ -101,6 +101,13 @@ def test_noise_signal_structure_absent():
     assert result.structure_present is False
 
 
+def test_score_signal_is_deterministic():
+    # the core scorer must be reproducible given a fixed seed — every lane relies on it
+    r1 = proxy.run_synthetic("structured", seed=0, nulls=NULLS)
+    r2 = proxy.run_synthetic("structured", seed=0, nulls=NULLS)
+    assert (r1.test_A_p, r1.test_B_p, r1.n_tones) == (r2.test_A_p, r2.test_B_p, r2.n_tones)
+
+
 # ---------------------------------------------------------------------------
 # consent / provenance gate
 # ---------------------------------------------------------------------------

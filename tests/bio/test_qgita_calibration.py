@@ -123,3 +123,10 @@ def test_auris_consent_gate_blocks():
     r = qc.score_qgita_auris(consent=False, provenance="x", nulls=100)
     assert r.blocked is True and r.valid is False
     assert r.to_dict()["structure_present"] is False
+
+
+def test_module_has_no_person_reading_surface():
+    # Auris/QGITA framing is human-adjacent; guard the module surface explicitly.
+    names = [n.lower() for n in dir(qc)]
+    for banned in ("face", "landmark", "detect", "emotion", "biometric", "recognize", "aura"):
+        assert not any(banned in n for n in names), f"unexpected {banned!r} surface"

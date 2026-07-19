@@ -1300,10 +1300,10 @@ def b16_sky_map(tmp_root: Path) -> Dict[str, Any]:
     cache is absent so CI never needs network.
     """
     from aureon.bio.sky_map import (
+        SKY_MAP_BOUNDARY,
         analyze_sky_map,
         planet_track_sources_from_de440,
         stellar_sources_from_nasa,
-        SKY_MAP_BOUNDARY,
     )
 
     stellar = stellar_sources_from_nasa()
@@ -1403,6 +1403,117 @@ def b17_cosmic_sensors(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b18_image_signal(tmp_root: Path) -> Dict[str, Any]:
+    """The image lane scores + renders through the engine with φ logic unchanged: a
+    synthetic multi-hue image's colour signal scores to a valid deterministic result
+    through the governed pipeline, the overlay render writes a composite for a valid
+    run, the consent gate blocks (and renders nothing), and the result carries the
+    scientific boundary. No person/face surface. (Closes the image lane's benchmark gap.)
+    """
+    import numpy as np
+
+    from aureon.bio import image_signal_adapter as isa
+    from aureon.bio.human_harmonic_proxy import SCIENTIFIC_BOUNDARY
+    from aureon.bio.image_harmonic_overlay import render_overlay
+    from aureon.bio.image_signal_adapter import score_image
+
+    img = np.zeros((120, 120, 3), np.uint8)
+    img[:60, :60] = (230, 30, 30)
+    img[:60, 60:] = (30, 200, 30)
+    img[60:, :60] = (30, 30, 220)
+    img[60:, 60:] = (230, 220, 20)
+
+    r1 = score_image(img, consent=True, provenance="benchmark synthetic image", nulls=150)
+    r2 = score_image(img, consent=True, provenance="benchmark synthetic image", nulls=150)
+    blocked = score_image(img, consent=False, provenance="x", nulls=100)
+    out = tmp_root / "overlay.png"
+    overlay = render_overlay(img, consent=True, provenance="benchmark synthetic image",
+                             out_path=out, nulls=150)
+
+    names = [n.lower() for n in dir(isa)]
+    invariants = {
+        "image_valid": r1.valid and not r1.blocked,
+        "image_deterministic": (r1.test_A_p, r1.test_B_p) == (r2.test_A_p, r2.test_B_p),
+        "consent_gate_blocks": blocked.blocked and not blocked.structure_present,
+        "boundary_present": r1.to_dict()["boundary"] == SCIENTIFIC_BOUNDARY,
+        "overlay_renders_on_valid": overlay.valid and overlay.out_path is not None and out.exists(),
+        "no_person_surface": not any(
+            b in n for n in names for b in ("face", "landmark", "detect", "recognize")
+        ),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Image derived-signal (colour → φ scan + overlay; φ logic unchanged)",
+        "module": "aureon/bio/image_signal_adapter.py",
+        "passed": passed,
+        "metrics": {
+            "image_A_p": r1.test_A_p,
+            "image_B_p": r1.test_B_p,
+            "image_separable": r1.structure_present,
+            "overlay_nodes": overlay.n_nodes,
+        },
+        "evidence": (
+            f"image colour scan valid (separable={r1.structure_present}, A_p={r1.test_A_p}); "
+            f"overlay rendered {overlay.n_nodes} nodes; consent gate blocks; boundary present"
+        ),
+        "invariants": invariants,
+    }
+
+
+def b19_coherence_lane(tmp_root: Path) -> Dict[str, Any]:
+    """The DE440 coherence lane scans through the engine with φ logic unchanged: the
+    repo-computed coherence spectrum (nothing consumed it before) folds into the band
+    and scans to a valid deterministic result, the sim control also scans valid, and
+    the consent gate blocks. Offline; skip-pass if the coherence data is absent.
+    """
+    from aureon.bio.coherence_scan import coherence_peak_tones, score_coherence
+
+    real = "data/de440_gate3_coherence.csv"
+    sim = "data/sim_gate3_coherence.csv"
+    if not Path(real).exists():
+        return {
+            "name": "Coherence lane (DE440 coherence spectrum; φ logic unchanged)",
+            "module": "aureon/bio/coherence_scan.py",
+            "passed": True,
+            "metrics": {"coherence_data": False},
+            "invariants": {"data_present_or_skip": True},
+            "evidence": "coherence data absent — invariant skipped (offline).",
+        }
+
+    tones = coherence_peak_tones(real)
+    r1 = score_coherence(real, nulls=150, seed=0)
+    r2 = score_coherence(real, nulls=150, seed=0)
+    sim_r = score_coherence(sim, nulls=150, seed=0) if Path(sim).exists() else r1
+    blocked = score_coherence(real, consent=False, provenance="x", nulls=100)
+
+    invariants = {
+        "tones_in_band": len(tones) >= 2,
+        "real_valid": r1.valid and r1.n_tones >= 2,
+        "deterministic": (r1.test_A_p, r1.test_B_p) == (r2.test_A_p, r2.test_B_p),
+        "sim_control_valid": sim_r.valid,
+        "consent_gate_blocks": blocked.blocked and not blocked.structure_present,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Coherence lane (DE440 coherence spectrum; φ logic unchanged)",
+        "module": "aureon/bio/coherence_scan.py",
+        "passed": passed,
+        "metrics": {
+            "n_tones": r1.n_tones,
+            "real_A_p": r1.test_A_p,
+            "real_B_p": r1.test_B_p,
+            "real_separable": r1.structure_present,
+        },
+        "evidence": (
+            f"DE440 coherence scan valid ({r1.n_tones} tones, separable={r1.structure_present}, "
+            f"A_p={r1.test_A_p}); sim control valid; consent gate blocks"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1426,6 +1537,8 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("QGITA φ calibration",         b15_qgita_calibration),
     ("Sky map",                     b16_sky_map),
     ("Cosmic sensors",              b17_cosmic_sensors),
+    ("Image derived-signal",        b18_image_signal),
+    ("Coherence lane",              b19_coherence_lane),
 ]
 
 

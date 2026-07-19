@@ -142,3 +142,13 @@ def test_module_has_no_person_reading_surface():
     names = [n.lower() for n in dir(msa)]
     for banned in ("face", "landmark", "detect", "emotion", "biometric", "recognize"):
         assert not any(banned in n for n in names), f"unexpected {banned!r} surface"
+
+
+def test_symbol_helper_missing_provenance_blocks():
+    # score_symbol defaults consent=True; a blank provenance must still block
+    syms = market.available_symbols()
+    if not syms:
+        pytest.skip("no local prediction symbols")
+    sym = syms.most_common(1)[0][0]
+    r = msa.score_symbol(sym, provenance="  ", nulls=100)
+    assert r.blocked is True

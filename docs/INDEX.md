@@ -84,6 +84,15 @@ Master table of contents for all project documentation.
 | [Dashboard Guide](dashboards/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
 | [Multi-Broker Guide](integrations/MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
 
+## Sensor Suite (φ signal adapters)
+| Document | Description |
+|----------|-------------|
+| [Sensor Suite](reports/SENSOR_SUITE.md) | **Start here** — every `aureon/bio/` lane (modality × boundary × data × benchmark) on one unchanged φ engine |
+| [Human Harmonic Proxy](reports/HUMAN_HARMONIC_PROXY.md) | Core governed derived-signal scorer |
+| [Sky Fingerprint](reports/SKY_FINGERPRINT.md) · [Faint Sky / UPE](reports/FAINT_SKY_UPE.md) · [NASA Sky Data](reports/NASA_SKY_DATA.md) | Astronomical light lanes |
+| [Sky Map](reports/SKY_MAP.md) · [Cosmic Sensors](reports/COSMIC_SENSORS.md) · [Coherence Lane](reports/COHERENCE_LANE.md) | All-sky map + Schumann/planetary/space-weather + DE440 coherence |
+| [Market Fingerprint](reports/MARKET_FINGERPRINT.md) · [QGITA Calibration](reports/QGITA_CALIBRATION.md) | Market test-bed + QGITA φ calibration |
+
 ## Deployment
 | Document | Description |
 |----------|-------------|

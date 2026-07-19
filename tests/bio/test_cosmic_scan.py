@@ -107,3 +107,15 @@ def test_cosmic_boundary_is_honest():
 def test_scan_result_boundary_present():
     r = cs.score_cosmic_catalog("planetary", nulls=NULLS)
     assert r.to_dict()["boundary"] == proxy.SCIENTIFIC_BOUNDARY
+
+
+def test_missing_provenance_blocks_at_helper_layer():
+    # the convenience helper defaults consent=True; a blank provenance must still block
+    r = cs.score_cosmic_catalog("schumann", consent=True, provenance="  ", nulls=100)
+    assert r.blocked is True
+
+
+def test_module_has_no_person_reading_surface():
+    names = [n.lower() for n in dir(cs)]
+    for banned in ("face", "landmark", "detect", "emotion", "biometric", "recognize"):
+        assert not any(banned in n for n in names), f"unexpected {banned!r} surface"

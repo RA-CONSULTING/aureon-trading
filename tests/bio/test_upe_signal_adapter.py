@@ -61,6 +61,13 @@ def test_broadband_upe_scores_non_separable():
     assert r.structure_present is False  # featureless -> no structure
 
 
+def test_rescan_is_deterministic():
+    spec = usa.synthetic_upe("structured")
+    r1 = usa.score_upe(spec, consent=True, provenance="det", nulls=200, seed=0)
+    r2 = usa.score_upe(spec, consent=True, provenance="det", nulls=200, seed=0)
+    assert (r1.test_A_p, r1.test_B_p) == (r2.test_A_p, r2.test_B_p)
+
+
 def test_structured_upe_scores_present():
     r = usa.score_upe(usa.synthetic_upe("structured"), consent=True,
                       provenance="synthetic UPE", nulls=NULLS)
