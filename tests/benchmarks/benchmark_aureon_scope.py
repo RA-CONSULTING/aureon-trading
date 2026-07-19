@@ -927,6 +927,73 @@ def b9_phenolic_fingerprint_cognition(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b10_bio_derived_signal(tmp_root: Path) -> Dict[str, Any]:
+    """Bio derived-signal pipeline holds its honest invariants: the UPE data adapter
+    reproduces the anchor (broadband/featureless UPE → NON-separable; genuine planted
+    emission lines → separable), the governance gate blocks an unconsented run and
+    scores nothing, and the spatial + multi-channel convergence map flags a cell only
+    when both independent channels agree. Structure in a derived signal only — no
+    person/subject reading anywhere in the path.
+    """
+    import numpy as np
+
+    import phenolic_fingerprint as engine
+    from aureon.bio.convergence_map import analyze_convergence
+    from aureon.bio.human_harmonic_proxy import HumanSignal, score_signal
+    from aureon.bio.upe_signal_adapter import score_upe, synthetic_upe
+
+    prov = "benchmark synthetic UPE (no real subject)"
+    broadband = score_upe(synthetic_upe("broadband"), consent=True, provenance=prov, nulls=200)
+    structured = score_upe(synthetic_upe("structured"), consent=True, provenance=prov, nulls=200)
+
+    # governance: an unconsented run is blocked and scores nothing
+    unconsented = score_signal(
+        HumanSignal(label="bench", frequencies_hz=(1100.0, 1104.0, 1780.0),
+                    provenance="", consent=False, modality="bio"),
+        nulls=100,
+    )
+
+    # spatial + multi-channel convergence map on a synthetic multi-hue image
+    img = np.zeros((120, 120, 3), np.uint8)
+    img[:60, :60] = (230, 30, 30)
+    img[:60, 60:] = (30, 200, 30)
+    img[60:, :60] = (30, 30, 220)
+    img[60:, 60:] = (230, 220, 20)
+    cmap = analyze_convergence(img, consent=True, provenance="benchmark synthetic image",
+                               grid=3, nulls=150)
+
+    invariants = {
+        "upe_broadband_non_separable": broadband.valid and not broadband.structure_present,
+        "upe_structured_separable": bool(
+            structured.structure_present
+            and (structured.test_A_p or 1.0) < engine.ALPHA
+            and (structured.test_B_p or 1.0) < engine.ALPHA
+        ),
+        "consent_gate_blocks": unconsented.blocked and not unconsented.structure_present,
+        "convergence_valid": cmap.valid and cmap.controls_pass,
+        "convergence_semantics": all(c.converged == (c.channels_fired == 2) for c in cmap.cells),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Bio derived-signal (UPE anchor + governance + convergence)",
+        "module": "aureon/bio/",
+        "passed": passed,
+        "metrics": {
+            "upe_broadband_A_p": broadband.test_A_p,
+            "upe_structured_A_p": structured.test_A_p,
+            "upe_structured_B_p": structured.test_B_p,
+            "convergence_cells": len(cmap.cells),
+            "convergence_converged": cmap.n_converged,
+        },
+        "invariants": invariants,
+        "evidence": (
+            f"broadband UPE non-separable; structured separable (A_p={structured.test_A_p}); "
+            f"consent gate blocks; convergence {cmap.n_converged}/{len(cmap.cells)} both-channel cells"
+        ),
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -942,6 +1009,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Skill execution → disk",      b7_skill_execution_artefacts),
     ("Meta-cognition reflection",   b8_meta_cognition_reflection),
     ("Phenolic → cognition",        b9_phenolic_fingerprint_cognition),
+    ("Bio derived-signal",          b10_bio_derived_signal),
 ]
 
 
