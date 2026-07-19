@@ -128,3 +128,18 @@ def test_module_has_no_face_or_person_surface():
     names = [n.lower() for n in dir(ov)]
     for banned in ("face", "landmark", "detect", "biometric", "recognize", "recognise"):
         assert not any(banned in n for n in names), f"unexpected {banned!r} surface"
+
+
+def test_upe_reference_mode_renders_valid_composite(tmp_path):
+    from PIL import Image
+
+    out = tmp_path / "upe.png"
+    result = ov.render_overlay(
+        _multihue(), consent=True, provenance="synthetic image",
+        out_path=out, nulls=NULLS, upe_reference=True,
+    )
+    assert result.out_path == str(out)
+    assert result.valid is True and result.blocked is False
+    assert Image.open(out).size == (120, 120)
+    # UPE mode must not claim a measurement; boundary still on the result dict
+    assert result.to_dict()["boundary"] == proxy.SCIENTIFIC_BOUNDARY

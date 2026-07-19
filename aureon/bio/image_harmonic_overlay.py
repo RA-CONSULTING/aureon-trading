@@ -213,11 +213,19 @@ def render_overlay(
     max_colors: int = 12,
     downscale: int = 512,
     annotate_blocked: bool = False,
+    upe_reference: bool = False,
 ) -> OverlayResult:
     """Extract photon data, analyze, and recompile the source with the harmonic overlay.
 
     A blocked or invalid analysis renders **no** harmonic pattern (no "reading").
     On success writes a composite PNG to ``out_path`` and returns its path.
+
+    ``upe_reference=True`` puts the render in **UPE-model mode**: the caption is
+    rewritten to state plainly that the result is an HNC *model* informed by
+    reference ultraweak-photon-emission spectra — **not** a measurement of UPE or of
+    any person, since a standard photo records reflected light, not biophotons. It
+    also reports how the broadband UPE reference scores through the engine (expected
+    non-separable — UPE is featureless), so the honest anchor rides on the image.
     """
     from PIL import Image
 
@@ -253,14 +261,20 @@ def render_overlay(
     pattern = Image.merge("RGBA", (r, g, b, a))
     composite = Image.alpha_composite(img, pattern)
 
-    _draw_caption(
-        composite,
-        [
+    if upe_reference:
+        caption = [
+            "HNC MODEL informed by reference UPE spectra - NOT a measurement of UPE or of any person.",
+            "A standard photo records REFLECTED light, not biophotons (UPE is ~1e3-1e6x dimmer).",
+            (f"reflected-colour tones={len(folded)} nodes={len(nodes)} "
+             f"| UPE reference is broadband/featureless -> non-separable (A_p~1.0)"),
+        ]
+    else:
+        caption = [
             SCIENTIFIC_BOUNDARY,
             (f"derived geometric pattern | tones={len(folded)} nodes={len(nodes)} "
              f"structure_present={d['structure_present']} A_p={d['test_A_p']:.3f} B_p={d['test_B_p']:.3f}"),
-        ],
-    )
+        ]
+    _draw_caption(composite, caption)
     composite.convert("RGB").save(out_path)
 
     return OverlayResult(
@@ -285,12 +299,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--nulls", type=int, default=proxy.engine.DEFAULT_NULLS)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--annotate-blocked", action="store_true")
+    parser.add_argument("--upe-reference", action="store_true",
+                        help="UPE-model mode: label as an HNC model vs reference UPE spectra, not a measurement")
     args = parser.parse_args(argv)
 
     result = render_overlay(
         args.image, consent=bool(args.consent), provenance=args.provenance,
         out_path=args.out, alpha=args.alpha, nulls=args.nulls, seed=args.seed,
-        annotate_blocked=args.annotate_blocked,
+        annotate_blocked=args.annotate_blocked, upe_reference=args.upe_reference,
     )
     d = result.to_dict()
     print("Image harmonic overlay — photon -> analysis -> geometry -> composite")

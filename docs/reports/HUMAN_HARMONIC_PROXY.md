@@ -123,6 +123,42 @@ python -m aureon.bio.image_harmonic_overlay path/to/image.png \
 python -m aureon.bio.image_harmonic_overlay path/to/image.png
 ```
 
+## UPE reference — the honest science anchor (`aureon/bio/upe_reference.py`)
+
+Ultraweak photon emission (UPE / biophotons) is a real, peer-reviewed phenomenon:
+living tissue faintly emits light from reactive-oxygen-species chemistry, ceasing
+at death ([J. Phys. Chem. Lett. 2024](https://pubs.acs.org/doi/10.1021/acs.jpclett.4c03546),
+[bioRxiv](https://www.biorxiv.org/content/10.1101/2024.11.08.622743v1.full)). Two
+facts are load-bearing:
+
+- **It is ~1,000–1,000,000× dimmer than the eye can perceive** (~10–10³
+  photons/cm²/s), detectable only with cooled photon-counting cameras in darkness.
+  **A standard photograph records reflected ambient light, never UPE** — you cannot
+  extract biophotons from an ordinary image.
+- **Its spectrum is broadband and featureless** (~200–800 nm, subtle orange max) —
+  **no discrete spectral lines.**
+
+`upe_reference.py` encodes that cited profile and maps it into the engine's
+modulation band. The honest consequence, verified in tests: a broadband UPE
+reference is **non-separable** through the phenolic engine (`test_A` p≈1.0) — it has
+**no discrete harmonic structure**. Any HNC "UPE render" is anchored to that truth
+rather than to invented structure.
+
+The overlay's `--upe-reference` mode uses this anchor: it renders a standard photo's
+**reflected-colour** tones as an **HNC model informed by reference UPE spectra**,
+with a caption that states plainly it is **not a measurement of UPE or of any
+person**, and that a photo records reflected light, not biophotons. It makes no
+claim about anyone's health or state.
+
+```bash
+# UPE-model render (labels it a model vs the reference, not a measurement):
+python -m aureon.bio.image_harmonic_overlay my_consented_photo.png \
+    --consent --provenance "my own photo" --upe-reference --out upe_model.png
+
+# The honest anchor: broadband UPE reference -> non-separable through the engine.
+python -m aureon.bio.upe_reference
+```
+
 ## Run it
 
 ```bash
