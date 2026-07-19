@@ -95,8 +95,8 @@ import { useLatency } from "./LatencyHook";
 export default function NexusLiveDashboard(){
   const {connected, auris, aura, wsCtl} = useAurisWS();
   const latency = useLatency("ws://localhost:8787");
-  const [name, setName] = useState("Gary Leckey");
-  const [dob, setDob] = useState("1991-11-02");
+  const [name, setName] = useState("");
+  const [dob, setDob] = useState("");
   const [t0, setT0] = useState<string>("");
 
   const t0Hz = useMemo(() => t0 ? Number(t0) : deriveT0Hz(dob), [t0, dob]);
