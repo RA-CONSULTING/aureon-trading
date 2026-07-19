@@ -53,11 +53,11 @@ This release ships the **interface + governance backbone**, proven by a
   `emit_proxy_result` (publishes `bio.human_proxy.run` on the ThoughtBus + a
   `human_harmonic_proxy` bus_trace, mirroring `aureon/cognition/phenolic_bridge.py`).
 
-The first **real** adapter now ships (see below); remaining **video / audio**
-extractors stay **future, gated, consent-required work**. Every adapter implements
-the `SignalAdapter` seam so the scoring and governance path never changes — and
-each is built only with explicit consent handling, provenance capture, and the
-same boundary enforced above.
+Several **real** adapters now ship (see below), including audio; the remaining
+**video** extractor stays **future, gated, consent-required work**. Every adapter
+implements the `SignalAdapter` seam so the scoring and governance path never
+changes — and each is built only with explicit consent handling, provenance
+capture, and the same boundary enforced above.
 
 ## Image adapter (shipped — content-agnostic)
 
@@ -91,6 +91,39 @@ python -m aureon.bio.image_signal_adapter path/to/image.png \
 
 # Without --consent the run is blocked and scores nothing.
 python -m aureon.bio.image_signal_adapter path/to/image.png
+```
+
+## Audio adapter (shipped — content-agnostic)
+
+`aureon/bio/audio_signal_adapter.py` scores an audio clip through the *unchanged*
+`score_signal` pipeline — **without becoming a voice, speaker, or emotion reader.**
+
+- **Content-agnostic by construction.** The signal comes from the clip's **global
+  spectral statistics only** — the dominant temporal frequencies across the whole
+  waveform. There is no speech recognition, no speaker identification, and no
+  per-word/per-segment analysis anywhere in the module. That makes it *structurally*
+  incapable of physiognomy-of-voice regardless of what the clip contains. A dominant
+  frequency is not identity.
+- **Physics reused, not invented.** An audio waveform *is* a time-series of amplitude
+  samples, so a windowed real FFT recovers its dominant frequencies (Hz) directly —
+  the same operation the UPE adapter performs on a photon-count series. `fold_to_band`
+  then octave-folds those into the 1000–2000 Hz band. A flat/broadband clip yields no
+  dominant tone, so noise honestly scores non-separable rather than a fabricated result.
+- **numpy + stdlib only.** WAV is read with the standard-library `wave` module — no
+  new dependency, no network, no import-time side effects.
+- **Every guardrail still applies.** Consent + provenance are *required arguments* to
+  `extract`/`score_audio`, the mandatory engine controls run, the Operator hard-boundary
+  + conscience veto gate the emission, and the `SCIENTIFIC_BOUNDARY` rides on every
+  result. Output is only *statistical structure in a derived signal* — never a claim
+  about a person.
+
+```bash
+# Deterministic synthetic self-test (no real subject): structured⇒present, noise⇒absent.
+python -m aureon.bio.audio_signal_adapter --self-test
+
+# Score a PCM WAV the caller consents to (content-agnostic, no voice analysis):
+python -m aureon.bio.audio_signal_adapter path/to/clip.wav \
+    --consent --provenance "my own recording, consented"
 ```
 
 ## Image harmonic overlay (photon → geometry → composite)

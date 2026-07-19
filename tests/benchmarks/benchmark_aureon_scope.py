@@ -1815,6 +1815,58 @@ def b25_observatory_report(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b26_audio_adapter(tmp_root: Path) -> Dict[str, Any]:
+    """An audio clip scores through the engine, φ logic unchanged: the audio adapter
+    turns a waveform into its dominant folded modulation tones (global clip statistics
+    only — no speech/speaker/emotion analysis), a synthetic structured tone clip scores
+    structure PRESENT while broadband noise scores ABSENT (the honest anchor), scoring
+    is deterministic, the consent gate blocks, and no person-reading surface exists.
+    Real audio is the next gated, consent-required adapter on the same unchanged seam.
+    """
+    from aureon.bio import audio_signal_adapter as asa
+
+    structured = asa.score_audio(asa.synthetic_audio("structured"), consent=True,
+                                 provenance="synthetic audio (no subject)", nulls=120, seed=0)
+    noise = asa.score_audio(asa.synthetic_audio("noise"), consent=True,
+                            provenance="synthetic audio (no subject)", nulls=120, seed=0)
+    again = asa.score_audio(asa.synthetic_audio("structured"), consent=True,
+                            provenance="synthetic audio (no subject)", nulls=120, seed=0)
+    blocked = asa.score_audio(asa.synthetic_audio("structured"), consent=False,
+                              provenance="x", nulls=100)
+
+    surface = [n.lower() for n in dir(asa)]
+    banned = ("face", "speaker", "voice", "emotion", "identity", "recognize", "biometric")
+
+    invariants = {
+        "structured_present": structured.valid and structured.structure_present
+        and structured.n_tones >= 2,
+        "noise_absent": noise.valid and not noise.structure_present,
+        "deterministic": (structured.test_A_p, structured.test_B_p)
+        == (again.test_A_p, again.test_B_p),
+        "consent_gate_blocks": blocked.blocked and not blocked.structure_present,
+        "no_person_surface": not any(b in n for b in banned for n in surface),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Audio signal adapter (waveform → folded tones; φ logic unchanged)",
+        "module": "aureon/bio/audio_signal_adapter.py",
+        "passed": passed,
+        "metrics": {
+            "structured_A_p": structured.test_A_p,
+            "structured_B_p": structured.test_B_p,
+            "structured_tones": structured.n_tones,
+            "noise_tones": noise.n_tones,
+        },
+        "evidence": (
+            f"structured clip → present ({structured.n_tones} tones, "
+            f"A_p={structured.test_A_p}); noise clip → absent; deterministic; "
+            f"consent gate blocks; no person surface"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1846,6 +1898,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Harmonic core",                b23_harmonic_core),
     ("Counter-frequency",            b24_counter_frequency),
     ("Observatory evidence report",  b25_observatory_report),
+    ("Audio signal adapter",         b26_audio_adapter),
 ]
 
 
