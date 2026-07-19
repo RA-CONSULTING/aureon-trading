@@ -994,6 +994,60 @@ def b10_bio_derived_signal(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b11_sky_derived_signal(tmp_root: Path) -> Dict[str, Any]:
+    """Sky scan holds its control invariants with the engine's φ logic unchanged:
+    a featureless optical continuum (negative-control reference) does NOT over-fire,
+    a planted clustered + φ-spaced line set (positive-control reference) IS detected,
+    a real open catalog (hydrogen Balmer) scans to a valid deterministic result, and
+    the consent gate blocks an unconsented scan. No claim is asserted about what the
+    real sky "should" score — only that the machinery scans light from space honestly.
+    """
+    import phenolic_fingerprint as engine
+    from aureon.bio import sky_reference as sky
+    from aureon.bio.sky_signal_adapter import score_catalog, score_sky
+
+    prov = "benchmark sky control"
+    continuum = score_sky(sky.continuum_spectrum(), consent=True, provenance=prov,
+                          kind="spectrum", nulls=200)
+    structured = score_sky(sky.structured_spectrum(), consent=True, provenance=prov,
+                           kind="spectrum", nulls=200)
+    balmer = score_catalog("balmer", nulls=200, seed=0)
+    balmer2 = score_catalog("balmer", nulls=200, seed=0)
+    unconsented = score_catalog("fraunhofer", consent=False, provenance="x", nulls=100)
+
+    invariants = {
+        "continuum_negative_ref_no_overfire": continuum.valid and not continuum.structure_present,
+        "planted_positive_ref_detected": bool(
+            structured.structure_present
+            and (structured.test_A_p or 1.0) < engine.ALPHA
+            and (structured.test_B_p or 1.0) < engine.ALPHA
+        ),
+        "real_catalog_valid": balmer.valid and balmer.n_tones == len(sky.HYDROGEN_BALMER_NM),
+        "scan_deterministic": (balmer.test_A_p, balmer.test_B_p) == (balmer2.test_A_p, balmer2.test_B_p),
+        "consent_gate_blocks": unconsented.blocked and not unconsented.structure_present,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Sky derived-signal (scan light from space; φ logic unchanged)",
+        "module": "aureon/bio/sky_signal_adapter.py",
+        "passed": passed,
+        "metrics": {
+            "balmer_A_p": balmer.test_A_p,
+            "balmer_B_p": balmer.test_B_p,
+            "balmer_separable": balmer.structure_present,
+            "structured_A_p": structured.test_A_p,
+            "continuum_over_fire": continuum.structure_present,
+        },
+        "evidence": (
+            f"continuum negative ref quiet; planted positive detected "
+            f"(A_p={structured.test_A_p}); real Balmer scan valid "
+            f"(separable={balmer.structure_present}, A_p={balmer.test_A_p}); consent gate blocks"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1010,6 +1064,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Meta-cognition reflection",   b8_meta_cognition_reflection),
     ("Phenolic → cognition",        b9_phenolic_fingerprint_cognition),
     ("Bio derived-signal",          b10_bio_derived_signal),
+    ("Sky derived-signal",          b11_sky_derived_signal),
 ]
 
 
