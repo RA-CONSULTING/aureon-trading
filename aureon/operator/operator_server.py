@@ -281,7 +281,9 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         path = request.path
         # Guard the Aureon API and the OpenAI-compatible mount alike: both honour
         # the same bearer/rate-limit posture (open only when no key is set).
-        if path in _OPEN_PATHS or not (path.startswith("/api/") or path.startswith("/v1/")):
+        if path in _OPEN_PATHS or not (
+            path.startswith("/api/") or path.startswith("/v1/") or path.startswith("/mcp")
+        ):
             return None
         if _sec.auth_enabled and not check_bearer(request.headers.get("Authorization"), _sec.api_key):
             return _err(401, "missing or invalid bearer token")
@@ -524,6 +526,38 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         return jsonify(
             mount.to_chat_completion(result, model=parsed["model"], engine=engine, created=created)
         )
+
+    # ── MCP — mount Aureon as a connector/tool (Model Context Protocol) ─────────
+    # A flagship agent adds Aureon in its own UI and calls these tools — no clone,
+    # no base_url swap. Each tool runs through the same veto-guarded engines and
+    # returns grounded text + a verdict only; nothing executes.
+    @app.post("/mcp")
+    def mcp_endpoint():
+        from aureon.operator import mcp as _mcp
+
+        def _tool_runner(name: str, arguments: Dict[str, Any]):
+            if name == "aureon_integration":
+                from aureon.operator.mount import integration_manifest
+
+                m = integration_manifest()
+                return (json.dumps(m, indent=2), m, False)
+            prompt = str(arguments.get("prompt", "")).strip()
+            if not prompt:
+                return ("prompt is required", None, True)
+            session_id = arguments.get("session_id")
+            if name == "aureon_switchboard":
+                res = _operator.respond(prompt, session_id=session_id).to_dict()
+            elif name == "aureon_reason":
+                res = _get_cognition().reason(prompt, session_id=session_id).to_dict()
+            else:
+                raise _mcp.UnknownTool(name)
+            # A conscience veto is an honest refusal, not a tool error (isError stays False).
+            return (str(res.get("text", "")), res, False)
+
+        response = _mcp.dispatch(request.get_json(silent=True), _tool_runner)
+        if response is None:
+            return ("", 202)  # notification — accepted, no body
+        return jsonify(response)
 
     # ── Provider API-key management (instance-owned, encrypted keystore) ────────
     # BYO keys for every model. Keys are stored encrypted (keystore.py), masked on
