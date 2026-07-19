@@ -354,13 +354,23 @@ def planet_track_sources_from_de440(
                 continue
             by_planet.setdefault(planet, []).append((ra, dec, r_au))
 
+    from aureon.bio.cosmic_reference import PLANETARY_TONE_MAP
+
     out: list[SkySource] = []
     for planet, samples in by_planet.items():
         if len(samples) < 8:
             continue
         r_series = np.array([s[2] for s in samples], dtype=float)
         raw_hz = _dominant_timeseries_hz(r_series, sample_rate_hz=1.0, max_peaks=12)
-        tones = tuple(sorted(f for f in (fold_to_band(v) for v in raw_hz) if f is not None))
+        tones = [f for f in (fold_to_band(v) for v in raw_hz) if f is not None]
+        # Enrich with the planet's octave-shifted period tone (Cosmic Octave), if known,
+        # so the ecliptic lane carries both the motion tone and the planetary tone.
+        octave = PLANETARY_TONE_MAP.get(planet.lower())
+        if octave is not None:
+            folded = fold_to_band(octave)
+            if folded is not None:
+                tones.append(folded)
+        tones = tuple(sorted(set(tones)))
         # A planet contributes its own distance-modulation tone(s); cells along the
         # ecliptic pool tones across planets to reach the >=2 the engine needs.
         if not tones:

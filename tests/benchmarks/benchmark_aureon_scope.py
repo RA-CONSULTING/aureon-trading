@@ -1356,6 +1356,53 @@ def b16_sky_map(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b17_cosmic_sensors(tmp_root: Path) -> Dict[str, Any]:
+    """More repo systems, directed at the sky with the engine's φ logic unchanged: the
+    Schumann ionospheric modes and the planetary tone table (real repo frequency
+    systems) and the pooled Kp/ap/F10.7 space-weather series each fold into the band
+    and scan to a valid deterministic result through the governed pipeline; the consent
+    gate blocks an unconsented scan. No claim is asserted about what any cosmic system
+    "should" score — only that the machinery directs them at the sky honestly.
+    """
+    from aureon.bio import cosmic_reference as cosmic
+    from aureon.bio.cosmic_scan import score_cosmic_catalog, score_space_weather
+
+    schumann = score_cosmic_catalog("schumann", nulls=150, seed=0)
+    schumann2 = score_cosmic_catalog("schumann", nulls=150, seed=0)
+    planetary = score_cosmic_catalog("planetary", nulls=150, seed=0)
+    space = score_space_weather(nulls=150, seed=0)
+    unconsented = score_cosmic_catalog("schumann", consent=False, provenance="x", nulls=100)
+
+    invariants = {
+        "schumann_valid": schumann.valid and schumann.n_tones == len(cosmic.SCHUMANN_MODES_HZ),
+        "schumann_deterministic": (schumann.test_A_p, schumann.test_B_p)
+        == (schumann2.test_A_p, schumann2.test_B_p),
+        "planetary_valid": planetary.valid and planetary.n_tones == len(cosmic.PLANETARY_TONE_HZ),
+        "space_weather_valid": space.valid and space.n_tones >= 2,
+        "consent_gate_blocks": unconsented.blocked and not unconsented.structure_present,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Cosmic sensors (Schumann + planetary + space-weather; φ logic unchanged)",
+        "module": "aureon/bio/cosmic_scan.py",
+        "passed": passed,
+        "metrics": {
+            "schumann_A_p": schumann.test_A_p,
+            "schumann_separable": schumann.structure_present,
+            "planetary_A_p": planetary.test_A_p,
+            "space_weather_tones": space.n_tones,
+            "space_weather_A_p": space.test_A_p,
+        },
+        "evidence": (
+            f"Schumann scan valid ({schumann.n_tones} modes, separable={schumann.structure_present}); "
+            f"planetary scan valid ({planetary.n_tones} tones); space-weather scan valid "
+            f"({space.n_tones} pooled tones); consent gate blocks"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1378,6 +1425,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Faint sky / UPE-from-sky",    b14_faint_sky_upe),
     ("QGITA φ calibration",         b15_qgita_calibration),
     ("Sky map",                     b16_sky_map),
+    ("Cosmic sensors",              b17_cosmic_sensors),
 ]
 
 
