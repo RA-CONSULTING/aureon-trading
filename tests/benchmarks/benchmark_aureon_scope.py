@@ -1920,6 +1920,65 @@ def b27_video_adapter(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b28_proxy_suite(tmp_root: Path) -> Dict[str, Any]:
+    """The capstone conformance roll-up over the shipped adapters, φ logic unchanged:
+    the signal-adapter suite runs every self-testable adapter's synthetic structured + null
+    self-test (proxy · audio · video · UPE) through the one unchanged score_signal, and each
+    adapter CONFORMS (structured⇒present ∧ null⇒absent, both valid). It writes a durable
+    markdown + JSON evidence artifact whose JSON round-trips (n_adapters + boundary match), the
+    markdown carries the boundary + one row per adapter, a second write at the same seed/nulls
+    is byte-identical, and no person-reading surface exists. One family, one governed backbone.
+    """
+    import json
+
+    from aureon.bio import proxy_suite as ps
+
+    report = ps.run_suite(nulls=120, seed=0)
+    out_md = tmp_root / "suite.md"
+    out_json = tmp_root / "suite.json"
+    rendered = ps.write_suite_report(report, out_md, out_json)
+
+    md = out_md.read_text(encoding="utf-8") if out_md.exists() else ""
+    loaded = json.loads(out_json.read_text(encoding="utf-8")) if out_json.exists() else {}
+    row_lines = [ln for ln in md.splitlines() if ln.startswith("| ") and "---" not in ln]
+
+    out_md2 = tmp_root / "suite2.md"
+    out_json2 = tmp_root / "suite2.json"
+    ps.write_suite_report(ps.run_suite(nulls=120, seed=0), out_md2, out_json2)
+
+    surface = [n.lower() for n in dir(ps)]
+    banned = ("face", "speaker", "voice", "pose", "emotion", "identity", "biometric")
+
+    invariants = {
+        "all_adapters_conform": report.n_adapters >= 4 and report.n_conforming == report.n_adapters,
+        "both_files_nonempty": out_md.exists() and out_md.stat().st_size > 0
+        and out_json.exists() and out_json.stat().st_size > 0,
+        "json_round_trips": loaded.get("n_adapters") == report.n_adapters
+        and loaded.get("boundary") == ps.SUITE_BOUNDARY,
+        "boundary_in_markdown": ps.SUITE_BOUNDARY in md,
+        "one_row_per_adapter": len(row_lines) == report.n_adapters + 1,  # + header row
+        "out_path_set": rendered.out_path == str(out_md),
+        "byte_identical_on_rewrite": out_md2.read_bytes() == out_md.read_bytes()
+        and out_json2.read_bytes() == out_json.read_bytes(),
+        "no_person_surface": not any(b in n for b in banned for n in surface),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Signal-adapter conformance suite (family roll-up; φ logic unchanged)",
+        "module": "aureon/bio/proxy_suite.py",
+        "passed": passed,
+        "metrics": {"n_adapters": report.n_adapters, "n_conforming": report.n_conforming,
+                    "md_bytes": out_md.stat().st_size if out_md.exists() else 0},
+        "evidence": (
+            f"{report.n_conforming}/{report.n_adapters} adapters conform "
+            f"(structured⇒present ∧ null⇒absent through the unchanged engine); durable md+JSON "
+            f"artifact round-trips; boundary present; byte-identical on re-run; no person surface"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1953,6 +2012,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Observatory evidence report",  b25_observatory_report),
     ("Audio signal adapter",         b26_audio_adapter),
     ("Video signal adapter",         b27_video_adapter),
+    ("Signal-adapter conformance",   b28_proxy_suite),
 ]
 
 

@@ -39,6 +39,7 @@ pre-registered test returns it.
 | Observatory evidence report | `celestial_observatory.py` | (artifact writer) | OBSERVATORY_BOUNDARY | serializes the consolidated picture to durable markdown + JSON | **b25** |
 | Audio | `audio_signal_adapter.py` | `audio` | SCIENTIFIC_BOUNDARY | consented WAV / waveform → windowed-FFT dominant tones (global clip statistics; synthetic self-test) | **b26** |
 | Video | `video_signal_adapter.py` | `video` | SCIENTIFIC_BOUNDARY | consented clip / frame-stack → per-frame mean-luminance time-series → windowed-FFT dominant tones (global per-frame luminance; synthetic self-test) | **b27** |
+| **Conformance suite** | `proxy_suite.py` | (family roll-up) | SUITE_BOUNDARY | runs every self-testable adapter's synthetic structured/null self-test through the one unchanged engine; asserts each conforms; durable md+JSON artifact | **b28** |
 
 Reference/data modules (no governance surface): `upe_reference.py`,
 `sky_reference.py`, `market_reference.py`, `cosmic_reference.py`, `sacred_lattice_reference.py`, `harmonic_core_reference.py`, `counter_frequency_reference.py`.
@@ -56,7 +57,7 @@ The **sacred lattice** (`sacred_lattice_scan.py`) is how the repo maps the sky *
 
 The **harmonic core** (`harmonic_core_scan.py`) goes one level deeper still — to the frequency substrate the framework itself is built on: the HNC **Master Formula Λ(t)** modes, the **Celtic Ogham** φ-scaled tree-tones, and the **Ghost Dance** ancestral Solfeggio ladder, each scanned through the same engine. See [HARMONIC_CORE.md](HARMONIC_CORE.md).
 
-† b9 is the phenolic→cognition bridge; b10–b27 are the bio lanes. Tier-A total: **27**.
+† b9 is the phenolic→cognition bridge; b10–b27 are the bio lanes; b28 is the signal-adapter conformance roll-up over the family. Tier-A total: **28**.
 
 ## Shared invariants (asserted per lane)
 

@@ -288,6 +288,34 @@ python -m aureon.bio.convergence_map my_consented_photo.png \
     --consent --provenance "my own photo" --grid 6 --out convergence_map.png
 ```
 
+## Conformance suite — the capstone roll-up (`aureon/bio/proxy_suite.py`)
+
+With the adapter roadmap complete, the **signal-adapter conformance suite** proves the
+*family* shares one governed backbone. It runs each self-testable adapter's **synthetic**
+self-test — a structured signal that must score present and a null signal that must score
+absent — through the *unchanged* `score_signal`, and tabulates whether each adapter
+**conforms** (structured⇒present ∧ null⇒absent, both valid). It is the human-signal
+analogue of the φ Celestial Observatory: one consolidated, self-documenting picture.
+
+- **Synthetic only, per adapter.** Every reading comes from a synthetic self-test with **no
+  real subject**; each adapter is reported independently — there is **no cross-modal
+  inference about any source**. The four adapters covered are those with a deterministic
+  structured/null contract: the proxy's own `SyntheticSignalAdapter`, audio, video, and UPE.
+  (image / sky / market score real data and are exercised by their own lanes/benchmarks.)
+- **Durable evidence artifact.** `write_suite_report` serializes the picture to a
+  deterministic markdown + JSON file (byte-identical on re-run at the same seed/nulls),
+  mirroring the observatory's `write_observatory_report`. `emit_suite` publishes a
+  `bio.proxy_suite.run` Thought so the metacognition monitor / Queen can sense that the whole
+  family still conforms. The `SUITE_BOUNDARY` rides on every result.
+
+```bash
+# Conformance self-test — every adapter: structured⇒present, null⇒absent (exit 0 iff all conform).
+python -m aureon.bio.proxy_suite --self-test
+
+# Write the consolidated evidence artifact (deterministic markdown + JSON).
+python -m aureon.bio.proxy_suite --report suite.md --report-json suite.json
+```
+
 ## Run it
 
 ```bash
