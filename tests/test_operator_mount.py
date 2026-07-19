@@ -203,6 +203,33 @@ def test_v1_models_lists_both_engines():
     assert ids == {"aureon-cognition", "aureon-switchboard"}
 
 
+def test_static_descriptor_matches_manifest():
+    # The committed .well-known/aureon-mount.json (what a cloned-but-not-running
+    # agent reads) must not drift from the live integration_manifest(). Regenerate
+    # with `python -m scripts.gen_mount_descriptor` if this fails.
+    import json
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[1]
+    descriptor = repo_root / ".well-known" / "aureon-mount.json"
+    assert descriptor.exists(), "run: python -m scripts.gen_mount_descriptor"
+    on_disk = json.loads(descriptor.read_text(encoding="utf-8"))
+    assert on_disk == mount.integration_manifest()
+
+
+def test_default_port_is_8790():
+    # A bare `python -m aureon.operator.operator_server` must bind :8790 — the port
+    # every doc, curl, deploy config, and the architecture diagram advertises. Guard
+    # against the default regressing (it was once 8080, breaking copy-paste).
+    import inspect
+
+    import aureon.operator.operator_server as srv
+
+    src = inspect.getsource(srv.main)
+    assert '"AUREON_OPERATOR_PORT", "8790"' in src
+    assert '"8080"' not in src
+
+
 def test_v1_integration_manifest_is_self_describing():
     c = _client()
     for path in ("/v1/integration", "/.well-known/aureon-mount.json"):

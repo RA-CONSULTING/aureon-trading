@@ -19,7 +19,7 @@ Routes:
   GET  /healthz                liveness + active provider line-up
 
 Run:
-  python -m aureon.operator.operator_server          # binds 0.0.0.0:8080
+  python -m aureon.operator.operator_server          # binds 0.0.0.0:8790
   AUREON_OPERATOR_PORT=8899 python -m aureon.operator.operator_server
 
 Reaching it from a phone: this repo usually runs in a remote container, so open
@@ -800,7 +800,7 @@ def build_boot_app():
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
     _load_env_file()  # deploy-time .env (Ollama base URL / model / key, etc.)
-    port = int(os.environ.get("AUREON_OPERATOR_PORT", "8080"))
+    port = int(os.environ.get("AUREON_OPERATOR_PORT", "8790"))
     host = os.environ.get("AUREON_OPERATOR_HOST", "0.0.0.0")
     logger.info("Aureon Operator server on %s:%s — lines: %s", host, port,
                 describe_provider_set(build_provider_set()))
