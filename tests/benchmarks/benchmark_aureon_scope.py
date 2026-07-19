@@ -1048,6 +1048,81 @@ def b11_sky_derived_signal(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b12_nasa_sky_data(tmp_root: Path) -> Dict[str, Any]:
+    """Real NASA data scans through the engine with the machinery intact (φ logic
+    unchanged). Reads the committed NASA Exoplanet Archive snapshot **offline** and
+    checks: the stellar-Wien lane scans to a valid, deterministic result with every
+    tone folded into the modulation band; the orbital-period lane also scans valid;
+    and the consent gate blocks an unconsented scan. No claim is asserted about what
+    the real sky "should" score — only that real NASA numbers scan honestly. If the
+    cache is absent the invariant degrades to a skip-pass so CI never needs network.
+    """
+    from aureon.bio.human_harmonic_proxy import TARGET_BAND_HZ
+    from aureon.bio.sky_signal_adapter import SkySignalAdapter, score_sky
+    from scripts.validation.benchmark_nasa_sky import (
+        DEFAULT_CACHE,
+        orbital_frequencies_hz,
+        read_cache,
+        stellar_peak_wavelengths_nm,
+    )
+
+    if not Path(DEFAULT_CACHE).exists():
+        return {
+            "name": "NASA sky data (real host-star scan; φ logic unchanged)",
+            "module": "scripts/validation/benchmark_nasa_sky.py",
+            "passed": True,
+            "metrics": {"cache_present": False},
+            "invariants": {"cache_present_or_skip": True},
+            "evidence": "NASA cache absent — invariant skipped (CI stays offline).",
+        }
+
+    rows = read_cache(DEFAULT_CACHE)
+    wavelengths = stellar_peak_wavelengths_nm(rows)
+    frequencies = orbital_frequencies_hz(rows)
+    prov = "benchmark NASA cache (real host-star data)"
+
+    stellar = score_sky(wavelengths, consent=True, provenance=prov, kind="lines", nulls=200)
+    stellar2 = score_sky(wavelengths, consent=True, provenance=prov, kind="lines", nulls=200)
+    orbital = score_sky(frequencies, consent=True, provenance=prov, kind="radio_hz", nulls=200)
+    unconsented = score_sky(wavelengths, consent=False, provenance="x", kind="lines", nulls=100)
+
+    low, high = TARGET_BAND_HZ
+    stellar_sig = SkySignalAdapter().extract(wavelengths, consent=True, provenance=prov, kind="lines")
+
+    invariants = {
+        "cache_has_rows": len(rows) > 0,
+        "stellar_lane_valid": stellar.valid and stellar.n_tones > 0,
+        "stellar_scan_deterministic": (stellar.test_A_p, stellar.test_B_p)
+        == (stellar2.test_A_p, stellar2.test_B_p),
+        "tones_in_band": bool(stellar_sig.frequencies_hz)
+        and all(low <= f < high for f in stellar_sig.frequencies_hz),
+        "orbital_lane_valid": orbital.valid and orbital.n_tones > 0,
+        "consent_gate_blocks": unconsented.blocked and not unconsented.structure_present,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "NASA sky data (real host-star scan; φ logic unchanged)",
+        "module": "scripts/validation/benchmark_nasa_sky.py",
+        "passed": passed,
+        "metrics": {
+            "nasa_rows": len(rows),
+            "stellar_A_p": stellar.test_A_p,
+            "stellar_B_p": stellar.test_B_p,
+            "stellar_separable": stellar.structure_present,
+            "orbital_A_p": orbital.test_A_p,
+            "orbital_separable": orbital.structure_present,
+        },
+        "evidence": (
+            f"{len(rows)} real NASA planets; stellar-Wien lane valid "
+            f"(separable={stellar.structure_present}, A_p={stellar.test_A_p}); "
+            f"orbital lane valid (separable={orbital.structure_present}); "
+            f"tones fold into band; consent gate blocks"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1065,6 +1140,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Phenolic → cognition",        b9_phenolic_fingerprint_cognition),
     ("Bio derived-signal",          b10_bio_derived_signal),
     ("Sky derived-signal",          b11_sky_derived_signal),
+    ("NASA sky data",               b12_nasa_sky_data),
 ]
 
 
