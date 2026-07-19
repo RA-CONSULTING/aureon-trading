@@ -159,6 +159,38 @@ python -m aureon.bio.image_harmonic_overlay my_consented_photo.png \
 python -m aureon.bio.upe_reference
 ```
 
+### UPE data adapter (`upe_signal_adapter.py`)
+
+The legitimate "field extraction" path: score **real UPE measurements** — never a
+photograph. Two inputs:
+
+- **Emission spectrum** — CSV `wavelength_nm,intensity` (~200–800 nm). Emission
+  lines (local maxima) → wavelength → EM Hz → octave-fold → engine.
+- **Photon-count time-series** — 1-D counts + sample rate → real FFT → dominant
+  temporal modes → fold → engine.
+
+It honestly reproduces the anchor: a **broadband/featureless** UPE spectrum scores
+**non-separable** (no discrete structure), while a spectrum with **genuine narrow
+emission lines** scores `structure_present` — the adapter detects real structure,
+never by fiat. Same governance throughout (consent + provenance required, engine
+controls, Operator/conscience veto, `SCIENTIFIC_BOUNDARY`), reusing `HumanSignal`
+with `modality="upe"`. **No claim about any subject's health, state, emotion,
+relationships, or identity** — UPE correlates with oxidative stress in the
+literature, and that is explicitly *not* inferred here.
+
+```bash
+# Self-test: broadband ⇒ structure ABSENT (anchor), planted lines ⇒ PRESENT.
+python -m aureon.bio.upe_signal_adapter --self-test
+
+# Score your own dark-chamber UPE spectrum (real measurement):
+python -m aureon.bio.upe_signal_adapter my_upe_spectrum.csv \
+    --consent --provenance "my dark-chamber UPE measurement, 2026-07"
+```
+
+A standard photograph is **not** UPE (it records reflected light) and is not
+accepted as such. This adapter is ready for genuine dark-chamber photon-counting
+data the moment it exists — no code change needed.
+
 ## Convergence map — the "ghost-hunter grid" (`aureon/bio/convergence_map.py`)
 
 Ghost-hunting done as *rigorous anomaly detection* (not showmanship) rests on two
