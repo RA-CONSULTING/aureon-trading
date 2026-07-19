@@ -48,6 +48,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { HASH_REDIRECTS, NAV_SECTIONS, navItemForPath, sectionForPath } from "./nav";
 import { PageSkeleton, RouteErrorBoundary } from "./Page";
+import { BackendStatusBanner } from "@/components/BackendStatusBanner";
 
 type PlatformHealth = "healthy" | "degraded" | "critical" | "unknown";
 
@@ -268,6 +269,7 @@ export default function ShellLayout() {
             <CommandPalette />
           </div>
         </header>
+        <BackendStatusBanner />
         <main className="flex-1 overflow-auto">
           <RouteErrorBoundary key={location.pathname} name={item?.label ?? "This page"}>
             <Suspense fallback={<PageSkeleton />}>
