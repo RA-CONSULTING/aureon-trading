@@ -93,6 +93,7 @@ Master table of contents for all project documentation.
 | [Sky Fingerprint](reports/SKY_FINGERPRINT.md) · [Faint Sky / UPE](reports/FAINT_SKY_UPE.md) · [NASA Sky Data](reports/NASA_SKY_DATA.md) | Astronomical light lanes |
 | [Sky Map](reports/SKY_MAP.md) · [Cosmic Sensors](reports/COSMIC_SENSORS.md) · [Coherence Lane](reports/COHERENCE_LANE.md) | All-sky map + Schumann/planetary/space-weather + DE440 coherence |
 | [Sacred Lattice](reports/SACRED_LATTICE.md) | The repo's OWN sky map — ancient-site coords + φ-geometry + Solfeggio/Schumann, gridded into an Earth-referenced map |
+| [Harmonic Core](reports/HARMONIC_CORE.md) | The repo's OWN harmonic substrate — HNC Master Formula Λ(t) modes + Celtic Ogham + Ghost Dance ancestral tones |
 | [Market Fingerprint](reports/MARKET_FINGERPRINT.md) · [QGITA Calibration](reports/QGITA_CALIBRATION.md) | Market test-bed + QGITA φ calibration |
 
 ## Deployment

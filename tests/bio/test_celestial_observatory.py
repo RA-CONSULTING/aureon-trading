@@ -34,13 +34,14 @@ def _approved(monkeypatch):
 
 def test_observe_runs_every_lane():
     r = obs.observe(nulls=NULLS, include_map=False)
-    assert r.n_lanes >= 11
+    assert r.n_lanes >= 14
     assert len(r.readings) == r.n_lanes
     assert r.n_valid >= 1
     lanes = {reading.lane for reading in r.readings}
     for expected in (
         "Hydrogen Balmer", "Airglow", "Schumann modes", "DE440 coherence",
         "Stargate lattice", "Maeshowe solstice", "Metatron geometry",
+        "Master Formula Λ(t)", "Celtic Ogham", "Ghost Dance",
     ):
         assert expected in lanes
 

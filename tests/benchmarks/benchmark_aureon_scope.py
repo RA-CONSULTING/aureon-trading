@@ -35,6 +35,7 @@ Gary Leckey · Aureon Institute — April 2026
 import io
 import os
 import sys
+
 os.environ.setdefault("AUREON_HNC_PERSIST_EVERY", "999999")
 
 if hasattr(sys.stdout, "buffer"):
@@ -48,7 +49,6 @@ import traceback
 from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Path setup — make the repo root importable when run directly.
@@ -99,7 +99,7 @@ def _step_done(passed: bool, summary: str = "") -> None:
 
 
 import aureon.core.aureon_thought_bus as _bus_module  # noqa: E402
-from aureon.core.aureon_thought_bus import ThoughtBus, Thought  # noqa: E402
+from aureon.core.aureon_thought_bus import Thought, ThoughtBus  # noqa: E402
 
 
 def _fresh_bus(persist_path: Path) -> ThoughtBus:
@@ -122,7 +122,8 @@ def b1_standing_wave_bonding(tmp_root: Path) -> Dict[str, Any]:
     """
     from aureon.vault.aureon_vault import AureonVault
     from aureon.vault.voice.hash_resonance_index import (
-        HashResonanceIndex, bond_strength,
+        HashResonanceIndex,
+        bond_strength,
     )
 
     bus = _fresh_bus(tmp_root / "bus.jsonl")
@@ -212,7 +213,8 @@ def b2_temporal_lighthouse(tmp_root: Path) -> Dict[str, Any]:
     """
     from aureon.vault.aureon_vault import AureonVault
     from aureon.vault.voice.temporal_causality import (
-        TemporalCausalityLaw, GoalState,
+        GoalState,
+        TemporalCausalityLaw,
     )
 
     bus = _fresh_bus(tmp_root / "bus.jsonl")
@@ -407,6 +409,7 @@ def b4_mesh_convergence(tmp_root: Path) -> Dict[str, Any]:
     """
     import random
     import threading
+
     from aureon.harmonic.phi_bridge_mesh import PhiBridgeMesh
     from aureon.vault.aureon_vault import AureonVault, VaultContent
 
@@ -543,7 +546,7 @@ def b5_conscience_veto(tmp_root: Path) -> Dict[str, Any]:
     bus = _fresh_bus(tmp_root / "bus.jsonl")
 
     # Import after the singleton is primed so the conscience grabs OUR bus.
-    from aureon.queen.queen_conscience import QueenConscience, ConscienceVerdict
+    from aureon.queen.queen_conscience import ConscienceVerdict, QueenConscience
 
     cricket = QueenConscience()
 
@@ -1654,6 +1657,59 @@ def b22_sacred_lattice(tmp_root: Path) -> Dict[str, Any]:
 
 
 
+def b23_harmonic_core(tmp_root: Path) -> Dict[str, Any]:
+    """The repo's OWN core harmonic substrate scans through the engine, φ logic
+    unchanged: the HNC Master Formula Λ(t) modes, the Celtic Ogham tree-tones, and the
+    Ghost Dance ancestral Solfeggio ladder each fold into the band and scan to a valid
+    deterministic result, the consent gate blocks, the Λ(t) weights are traceable and
+    normalised, the Ogham φ-scaling is faithful, and no person-reading surface exists.
+    """
+    from aureon.bio import harmonic_core_reference as core
+    from aureon.bio import harmonic_core_scan as hc
+
+    scans = {name: hc.score_harmonic_core(name, nulls=120, seed=0)
+             for name in ("lambda", "ogham", "ghostdance")}
+    again = hc.score_harmonic_core("lambda", nulls=120, seed=0)
+    blocked = hc.score_harmonic_core("lambda", consent=False, provenance="x", nulls=100)
+
+    weights = [w for _f, w in core.lambda_weighted()]
+    # Ogham aicme-2 rule: 174 Hz base × PHI
+    huath = next(hz for n, _t, _a, hz in core.ogham_feda() if n == "Huath")
+
+    surface = [n.lower() for n in dir(hc)]
+    banned = ("face", "landmark", "detect", "emotion", "biometric", "recognize")
+
+    invariants = {
+        "all_scans_valid": all(r.valid and r.n_tones >= 2 for r in scans.values()),
+        "deterministic": (scans["lambda"].test_A_p, scans["lambda"].test_B_p)
+        == (again.test_A_p, again.test_B_p),
+        "consent_gate_blocks": blocked.blocked and not blocked.structure_present,
+        "lambda_weights_normalised": abs(sum(weights) - 1.0) < 1e-9 and len(weights) == 6,
+        "ogham_phi_scaled": abs(huath - 174 * core.PHI) < 1e-6,
+        "no_person_surface": not any(b in n for b in banned for n in surface),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Harmonic core (HNC Λ(t) / Ogham / Ghost Dance; φ logic unchanged)",
+        "module": "aureon/bio/harmonic_core_scan.py",
+        "passed": passed,
+        "metrics": {
+            "lambda_tones": scans["lambda"].n_tones,
+            "ogham_tones": scans["ogham"].n_tones,
+            "ghostdance_tones": scans["ghostdance"].n_tones,
+        },
+        "evidence": (
+            f"Λ(t)/Ogham/Ghost-Dance scans valid "
+            f"({scans['lambda'].n_tones}/{scans['ogham'].n_tones}/"
+            f"{scans['ghostdance'].n_tones} tones); Λ weights sum=1.0; Ogham φ-scaled; "
+            f"consent gate blocks; no person surface"
+        ),
+        "invariants": invariants,
+    }
+
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1682,6 +1738,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("φ Celestial Observatory",     b20_celestial_observatory),
     ("Observatory → cognition",     b21_observatory_cognition),
     ("Sacred lattice",               b22_sacred_lattice),
+    ("Harmonic core",                b23_harmonic_core),
 ]
 
 
@@ -1805,7 +1862,7 @@ def _discover_local_adapters() -> List[Tuple[str, Any]]:
             without knowing it needs the question at construction."""
 
             def __init__(self) -> None:
-                self._inner: Optional[Any] = None
+                self._inner: Any | None = None
 
             def prompt(self, messages, system="", **kw):
                 user_text = ""

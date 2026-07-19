@@ -15,6 +15,7 @@ Lanes (each reuses its own module):
   * Kp/ap/F10.7 space weather                                 → ``cosmic_scan``
   * DE440 coherence spectrum                                  → ``coherence_scan``
   * Sacred lattice: stargate / Maeshowe / Metatron            → ``sacred_lattice_scan``
+  * Harmonic core: Master Formula Λ(t) / Ogham / Ghost Dance  → ``harmonic_core_scan``
   * All-sky RA/Dec map + sacred-lattice Earth-grid map        → ``sky_map``
 
 Every lane routes through ``score_signal`` (consent/provenance → controls →
@@ -127,6 +128,7 @@ def observe(
     """
     from aureon.bio.coherence_scan import score_coherence
     from aureon.bio.cosmic_scan import score_cosmic_catalog, score_space_weather
+    from aureon.bio.harmonic_core_scan import score_harmonic_core
     from aureon.bio.sacred_lattice_scan import lattice_sky_sources, score_lattice
     from aureon.bio.sky_map import (
         analyze_sky_map,
@@ -184,6 +186,14 @@ def observe(
                              score_lattice("maeshowe", consent=consent, nulls=nulls, seed=seed)))
     readings.append(_reading("Metatron geometry", "φ-geometry (13-sphere)",
                              score_lattice("metatron", consent=consent, nulls=nulls, seed=seed)))
+
+    # harmonic core — the repo's OWN HNC harmonic substrate
+    readings.append(_reading("Master Formula Λ(t)", "HNC substrate (6 modes)",
+                             score_harmonic_core("lambda", consent=consent, nulls=nulls, seed=seed)))
+    readings.append(_reading("Celtic Ogham", "tree-tones (φ-scaled)",
+                             score_harmonic_core("ogham", consent=consent, nulls=nulls, seed=seed)))
+    readings.append(_reading("Ghost Dance", "ancestral (Solfeggio)",
+                             score_harmonic_core("ghostdance", consent=consent, nulls=nulls, seed=seed)))
 
     # all-sky RA/Dec map summary + the sacred-lattice Earth-grid map
     sky_map_converged: int | None = None
