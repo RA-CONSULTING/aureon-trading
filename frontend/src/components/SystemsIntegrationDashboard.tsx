@@ -8,6 +8,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSystemsIntegration, useTemporalLadder, useQueenHiveBrowser } from '../hooks/useSystemsIntegration';
+import { SimulatedDataBadge } from '@/components/SimulatedDataBadge';
 
 const SystemStatusCard: React.FC<{
   name: string;
@@ -100,18 +101,21 @@ export const SystemsIntegrationDashboard: React.FC = () => {
     <div className="p-6 bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">
-          🌌 Temporal Ladder - Hive Mind Integration
-        </h1>
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-3xl font-bold text-white">
+            Temporal Ladder — Hive Mind Integration
+          </h1>
+          <SimulatedDataBadge />
+        </div>
         <p className="text-gray-400">
-          Prime Sentinel: GARY LECKEY 02111991
+          In-browser systems-integration model
         </p>
       </div>
 
       {/* Hive Mind Coherence */}
       <div className="mb-8 bg-gray-800 rounded-xl p-6 border border-purple-500/30">
         <h2 className="text-xl font-bold text-white mb-4">
-          🧠 Hive Mind Coherence
+          Hive Mind Coherence
         </h2>
         <div className="flex items-center gap-4">
           <div className="flex-1">
