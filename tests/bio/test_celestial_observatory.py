@@ -82,6 +82,39 @@ def test_render_writes_picture(tmp_path):
     assert out.exists() and out.stat().st_size > 0
 
 
+def test_report_writer_writes_md_and_json(tmp_path):
+    import json
+
+    r = obs.observe(nulls=NULLS, include_map=False)
+    out_md = tmp_path / "obs.md"
+    out_json = tmp_path / "obs.json"
+    rendered = obs.write_observatory_report(r, out_md, out_json)
+
+    assert rendered.out_path == str(out_md)
+    assert out_md.exists() and out_md.stat().st_size > 0
+    assert out_json.exists() and out_json.stat().st_size > 0
+
+    # JSON round-trips to the exact report record
+    loaded = json.loads(out_json.read_text(encoding="utf-8"))
+    assert loaded["n_lanes"] == r.n_lanes
+    assert loaded["boundary"] == obs.OBSERVATORY_BOUNDARY
+
+    # markdown carries the honest boundary + one table row per lane
+    md = out_md.read_text(encoding="utf-8")
+    assert obs.OBSERVATORY_BOUNDARY in md
+    row_lines = [ln for ln in md.splitlines() if ln.startswith("| ") and "---" not in ln]
+    # one header row + one row per lane
+    assert len(row_lines) == r.n_lanes + 1
+
+    # deterministic: a second write at the same seed/nulls is byte-identical
+    out_md2 = tmp_path / "obs2.md"
+    out_json2 = tmp_path / "obs2.json"
+    obs.write_observatory_report(obs.observe(nulls=NULLS, include_map=False, seed=0),
+                                 out_md2, out_json2)
+    assert out_md2.read_bytes() == out_md.read_bytes()
+    assert out_json2.read_bytes() == out_json.read_bytes()
+
+
 def test_emit_publishes_to_cognition():
     published = []
 

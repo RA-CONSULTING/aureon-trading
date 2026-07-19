@@ -36,6 +36,7 @@ pre-registered test returns it.
 | Harmonic core (Λ(t)/Ogham/Ghost Dance) | `harmonic_core_scan.py` | `sky` | HARMONIC_CORE_BOUNDARY | repo's own HNC Master-Formula modes + Celtic Ogham + ancestral Solfeggio | **b23** |
 | Counter-frequency (φ/Fibonacci canon) | `counter_frequency_scan.py` | `sky` | COUNTER_FREQUENCY_BOUNDARY | repo's own Fibonacci-ladder + φ-harmonic + Solfeggio canon | **b24** |
 | **φ Celestial Observatory** | `celestial_observatory.py` | (orchestrator) | OBSERVATORY_BOUNDARY | every sky/cosmic lane above | **b20** |
+| Observatory evidence report | `celestial_observatory.py` | (artifact writer) | OBSERVATORY_BOUNDARY | serializes the consolidated picture to durable markdown + JSON | **b25** |
 
 Reference/data modules (no governance surface): `upe_reference.py`,
 `sky_reference.py`, `market_reference.py`, `cosmic_reference.py`, `sacred_lattice_reference.py`, `harmonic_core_reference.py`, `counter_frequency_reference.py`.
@@ -44,13 +45,16 @@ The **φ Celestial Observatory** (`celestial_observatory.py`) is the capstone: i
 operates every sky-facing lane at once through the one unchanged engine, renders one
 consolidated picture, and **emits it to cognition** (`bio.observatory.run` on the
 ThoughtBus, benchmark **b21**) so the Queen/metacognition monitor can sense the
-whole-sky reading — see [CELESTIAL_OBSERVATORY.md](CELESTIAL_OBSERVATORY.md).
+whole-sky reading, and **writes the picture as a durable, deterministic evidence
+artifact** (`write_observatory_report` → markdown + JSON, benchmark **b25**; committed
+snapshot [OBSERVATORY_EVIDENCE.md](OBSERVATORY_EVIDENCE.md)) — see
+[CELESTIAL_OBSERVATORY.md](CELESTIAL_OBSERVATORY.md).
 
 The **sacred lattice** (`sacred_lattice_scan.py`) is how the repo maps the sky *differently*: not with object catalogs but through Earth's own harmonic lattice — ancient-site coordinates, φ-scaled sacred geometry, and the Solfeggio/Schumann canon — scanned through the same engine and grided into an Earth-referenced map. See [SACRED_LATTICE.md](SACRED_LATTICE.md).
 
 The **harmonic core** (`harmonic_core_scan.py`) goes one level deeper still — to the frequency substrate the framework itself is built on: the HNC **Master Formula Λ(t)** modes, the **Celtic Ogham** φ-scaled tree-tones, and the **Ghost Dance** ancestral Solfeggio ladder, each scanned through the same engine. See [HARMONIC_CORE.md](HARMONIC_CORE.md).
 
-† b9 is the phenolic→cognition bridge; b10–b24 are the bio lanes. Tier-A total: **24**.
+† b9 is the phenolic→cognition bridge; b10–b25 are the bio lanes. Tier-A total: **25**.
 
 ## Shared invariants (asserted per lane)
 
@@ -65,11 +69,11 @@ face/landmark/detect/emotion/biometric/recognize). Convenience helpers that defa
 
 `HUMAN_HARMONIC_PROXY.md` · `UPE_DATA_AVAILABILITY.md` · `SKY_FINGERPRINT.md` ·
 `FAINT_SKY_UPE.md` · `NASA_SKY_DATA.md` · `MARKET_FINGERPRINT.md` ·
-`QGITA_CALIBRATION.md` · `SKY_MAP.md` · `COSMIC_SENSORS.md` · `COHERENCE_LANE.md` · `SACRED_LATTICE.md` · `HARMONIC_CORE.md` · `COUNTER_FREQUENCY.md`.
+`QGITA_CALIBRATION.md` · `SKY_MAP.md` · `COSMIC_SENSORS.md` · `COHERENCE_LANE.md` · `SACRED_LATTICE.md` · `HARMONIC_CORE.md` · `COUNTER_FREQUENCY.md` · `CELESTIAL_OBSERVATORY.md` · `OBSERVATORY_EVIDENCE.md`.
 
 ## Run the whole suite
 
 ```bash
 AUREON_LLM_OFFLINE=1 AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS=1 pytest tests/bio/ -q
-python tests/benchmarks/benchmark_aureon_scope.py     # Tier-A 24/24
+python tests/benchmarks/benchmark_aureon_scope.py     # Tier-A 25/25
 ```

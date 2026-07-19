@@ -1762,6 +1762,59 @@ def b24_counter_frequency(tmp_root: Path) -> Dict[str, Any]:
 
 
 
+def b25_observatory_report(tmp_root: Path) -> Dict[str, Any]:
+    """The φ Celestial Observatory writes a durable, reproducible evidence artifact:
+    ``write_observatory_report`` serializes the consolidated picture to markdown + JSON
+    (every number copied verbatim from ``report.to_dict()``, nothing recomputed), the
+    JSON round-trips to a record whose lane count + boundary match the live report, the
+    markdown carries the honest boundary + one table row per lane, and a second write at
+    the same seed/nulls is byte-identical. Self-documenting cross-lane evidence on disk.
+    """
+    import json
+
+    from aureon.bio import celestial_observatory as obs
+
+    report = obs.observe(nulls=120, seed=0, include_map=False)
+    out_md = tmp_root / "observatory.md"
+    out_json = tmp_root / "observatory.json"
+    rendered = obs.write_observatory_report(report, out_md, out_json)
+
+    md = out_md.read_text(encoding="utf-8") if out_md.exists() else ""
+    loaded = json.loads(out_json.read_text(encoding="utf-8")) if out_json.exists() else {}
+    row_lines = [ln for ln in md.splitlines() if ln.startswith("| ") and "---" not in ln]
+
+    out_md2 = tmp_root / "observatory2.md"
+    out_json2 = tmp_root / "observatory2.json"
+    obs.write_observatory_report(obs.observe(nulls=120, seed=0, include_map=False),
+                                 out_md2, out_json2)
+
+    invariants = {
+        "both_files_nonempty": out_md.exists() and out_md.stat().st_size > 0
+        and out_json.exists() and out_json.stat().st_size > 0,
+        "json_round_trips": loaded.get("n_lanes") == report.n_lanes
+        and loaded.get("boundary") == obs.OBSERVATORY_BOUNDARY,
+        "boundary_in_markdown": obs.OBSERVATORY_BOUNDARY in md,
+        "one_row_per_lane": len(row_lines) == report.n_lanes + 1,  # + header row
+        "out_path_set": rendered.out_path == str(out_md),
+        "byte_identical_on_rewrite": out_md2.read_bytes() == out_md.read_bytes()
+        and out_json2.read_bytes() == out_json.read_bytes(),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Observatory evidence report (durable, deterministic cross-lane artifact)",
+        "module": "aureon/bio/celestial_observatory.py",
+        "passed": passed,
+        "metrics": {"n_lanes": report.n_lanes, "n_valid": report.n_valid,
+                    "md_bytes": out_md.stat().st_size if out_md.exists() else 0},
+        "evidence": (
+            f"markdown + JSON evidence artifact for {report.n_lanes} lanes; JSON round-trips; "
+            f"boundary present; byte-identical on re-run (deterministic)"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1792,6 +1845,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Sacred lattice",               b22_sacred_lattice),
     ("Harmonic core",                b23_harmonic_core),
     ("Counter-frequency",            b24_counter_frequency),
+    ("Observatory evidence report",  b25_observatory_report),
 ]
 
 

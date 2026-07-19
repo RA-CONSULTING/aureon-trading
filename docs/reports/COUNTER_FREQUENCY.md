@@ -61,7 +61,7 @@ python -m aureon.bio.celestial_observatory        # the counter-frequency lane n
 ```
 
 Benchmarked as Tier-A invariant **b24 "Counter-frequency"** in
-`tests/benchmarks/benchmark_aureon_scope.py` (Tier-A **24/24**). Fully offline; the
+`tests/benchmarks/benchmark_aureon_scope.py` (Tier-A **25/25**). Fully offline; the
 lane is copied static data, so it runs anywhere with no network. See
 [SENSOR_SUITE.md](SENSOR_SUITE.md) for the whole picture and
 [CELESTIAL_OBSERVATORY.md](CELESTIAL_OBSERVATORY.md) for the consolidated instrument.

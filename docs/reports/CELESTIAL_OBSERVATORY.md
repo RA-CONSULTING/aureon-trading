@@ -79,14 +79,29 @@ metacognition monitor and the Queen can sense the whole-sky reading. Emission is
 best-effort: a throwing bus never crashes an observation. This makes the observatory a
 live sensor of the organism, not just a report.
 
+## The durable evidence artifact
+
+`write_observatory_report(report, out_md, out_json=None)` serializes the consolidated
+picture to a **markdown + JSON** record — every number copied verbatim from
+`report.to_dict()`, nothing recomputed, the honest boundary printed in full. The body
+carries no wall-clock timestamp, so two runs at the same `seed`/`nulls` produce
+byte-identical files: the artifact is diff-stable and reproducible. The committed
+snapshot lives at [OBSERVATORY_EVIDENCE.md](OBSERVATORY_EVIDENCE.md) (regenerate with the
+`--report` command below); the full machine-readable record is `observatory_evidence.json`.
+
 ## Run it
 
 ```bash
 python -m aureon.bio.celestial_observatory --render observatory.png
 python -m aureon.bio.celestial_observatory --emit          # publish to cognition
+python -m aureon.bio.celestial_observatory \
+    --report docs/reports/OBSERVATORY_EVIDENCE.md \
+    --report-json docs/reports/observatory_evidence.json   # durable evidence artifact
 ```
 
 Benchmarked as Tier-A invariants **b20 "φ Celestial Observatory"** and
-**b21 "Observatory → cognition"** (plus **b22 "Sacred lattice"** and **b23 "Harmonic core"** / **b24 "Counter-frequency"**) in `tests/benchmarks/benchmark_aureon_scope.py`
-(Tier-A 24/24). Fully offline; lanes whose data is absent degrade to a skipped reading
-so it runs anywhere. See [SENSOR_SUITE.md](SENSOR_SUITE.md) for the per-lane catalog.
+**b21 "Observatory → cognition"** (plus **b22 "Sacred lattice"**, **b23 "Harmonic core"**,
+**b24 "Counter-frequency"**, and **b25 "Observatory evidence report"**) in
+`tests/benchmarks/benchmark_aureon_scope.py` (Tier-A 25/25). Fully offline; lanes whose
+data is absent degrade to a skipped reading so it runs anywhere. See
+[SENSOR_SUITE.md](SENSOR_SUITE.md) for the per-lane catalog.
