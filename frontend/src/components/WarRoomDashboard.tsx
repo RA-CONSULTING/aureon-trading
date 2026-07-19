@@ -1,6 +1,7 @@
 import { useQuantumWarRoom } from '@/hooks/useQuantumWarRoom';
 import { useGlobalState } from '@/hooks/useGlobalState';
 import { useMultiExchangeBalances } from '@/hooks/useMultiExchangeBalances';
+import { useHncCoherence } from '@/hooks/useHncCoherence';
 import { QuantumStatePanel } from './warroom/QuantumStatePanel';
 import { HistoricalTimeline } from './warroom/HistoricalTimeline';
 import { LiveStrikeStream } from './warroom/LiveStrikeStream';
@@ -31,6 +32,8 @@ export default function WarRoomDashboard() {
   const { state, launchAssault, emergencyStop } = useQuantumWarRoom();
   const globalState = useGlobalState();
   const { exchangeStatuses: liveExchanges } = useMultiExchangeBalances();
+  // REAL HNC coherence Γ from the operator (/api/pulse), not a simulation.
+  const { gamma: hncGamma } = useHncCoherence();
 
   // Scout intel = REAL per-exchange connection state from get-user-balances.
   // Kill/PnL telemetry is intentionally omitted (no real kill-tracking source in the
@@ -56,6 +59,12 @@ export default function WarRoomDashboard() {
               {globalState.isRunning && (
                 <Badge variant="default" className="bg-green-500 animate-pulse">
                   SYSTEMS ONLINE
+                </Badge>
+              )}
+              {hncGamma != null && (
+                <Badge variant="outline" className="border-primary/40 text-primary"
+                       title="Real HNC coherence (gamma) from the operator (/api/pulse)">
+                  HNC coherence {(hncGamma * 100).toFixed(1)}%
                 </Badge>
               )}
             </p>

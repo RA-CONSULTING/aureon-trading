@@ -38,7 +38,14 @@ const ORGANISM = {
   connectome: { nodes: 1282, baton_linked: 101, touched: 15, woven: 5, coverage_pct: 1.17 },
 };
 
-const PULSE = { ok: true, status: "healthy", organism: ORGANISM };
+const PULSE = {
+  ok: true,
+  status: "healthy",
+  organism: {
+    ...ORGANISM,
+    unification: { blended: { coherence_gamma: 0.536, available: true } },
+  },
+};
 
 async function mockLiveBackend(page: Page) {
   await page.route("**/api/status", (r) => r.fulfill({ json: STATUS }));
@@ -75,4 +82,12 @@ test("Overview degrades honestly (no fabrication) when the backend is down", asy
   await expect(page.getByText(/Gateway offline/i).first()).toBeVisible({ timeout: 15_000 });
   // and the explicit app-wide offline banner
   await expect(page.getByText(/Operator backend offline/i)).toBeVisible();
+});
+
+test("War Room surfaces REAL HNC coherence from the operator pulse", async ({ page }) => {
+  await mockLiveBackend(page);
+  await page.goto("/trading/war-room", { waitUntil: "domcontentloaded" });
+
+  // coherence_gamma 0.536 -> "HNC coherence 53.6%" badge, sourced from /api/pulse
+  await expect(page.getByText(/HNC coherence 53\.6%/i)).toBeVisible({ timeout: 15_000 });
 });
