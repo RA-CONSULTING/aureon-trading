@@ -23,7 +23,7 @@ import { TradingStatusPanel } from './warroom/TradingStatusPanel';
 import { LiveTradeStream } from './warroom/LiveTradeStream';
 import { LaunchButton } from './warroom/LaunchButton';
 import { Badge } from '@/components/ui/badge';
-// 🦆 DUCK COMMANDOS - IRA SNIPER MODE
+// Exchange scouts + signal leaderboard
 import { SniperLeaderboard } from './warroom/SniperLeaderboard';
 import { DuckCommandoIntel } from './warroom/DuckCommandoIntel';
 
@@ -32,14 +32,14 @@ export default function WarRoomDashboard() {
   const globalState = useGlobalState();
   const { exchangeStatuses: liveExchanges } = useMultiExchangeBalances();
 
-  // Duck Commando intel = REAL per-exchange connection state from get-user-balances.
+  // Scout intel = REAL per-exchange connection state from get-user-balances.
   // Kill/PnL telemetry is intentionally omitted (no real kill-tracking source in the
   // frontend yet) so the panel shows genuine connection dots, never fabricated stats.
   const exchangeStatuses = liveExchanges.map((ex) => ({
     exchange: ex.exchange,
     connected: ex.connected,
   }));
-  // Sniper leaderboard has no real telemetry source yet → honest empty state.
+  // Signal leaderboard has no real telemetry source yet -> honest empty state.
   const symbolStats: never[] = [];
 
   return (
@@ -49,7 +49,7 @@ export default function WarRoomDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-destructive to-primary bg-clip-text text-transparent">
-              🦆 QUANTUM QUACKERS WAR ROOM
+              Trading War Room
             </h1>
             <p className="text-muted-foreground mt-1 flex items-center gap-2">
               Autonomous Trading • Live Quantum State • Temporal Ladder
@@ -109,11 +109,11 @@ export default function WarRoomDashboard() {
           <LiveTradeStream />
         </div>
 
-        {/* 🦆 DUCK COMMANDOS - IRA SNIPER MODE 🦆 */}
+        {/* Exchange scouts + signal leaderboard */}
         <div className="space-y-4">
-          {/* Duck Intel + Sniper Leaderboard */}
+          {/* Exchange scout intel + signal leaderboard */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <DuckCommandoIntel exchangeStatuses={exchangeStatuses} showLore={true} />
+            <DuckCommandoIntel exchangeStatuses={exchangeStatuses} showLore={false} />
             <SniperLeaderboard symbolStats={symbolStats} sortBy="kills" maxDisplay={10} />
           </div>
         </div>

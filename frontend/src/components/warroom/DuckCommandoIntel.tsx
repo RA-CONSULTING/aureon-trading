@@ -17,7 +17,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DUCK_COMMANDOS_LIST,
-  QUANTUM_QUACKERS,
   getDuckForExchange,
   getRandomMissionQuote,
 } from '../../core/duckCommandos';
@@ -55,23 +54,21 @@ export function DuckCommandoIntel({
       <CardHeader className="bg-gradient-to-r from-green-600/30 via-slate-800 to-orange-500/30 border-b border-slate-700 pb-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <span className="text-4xl">{QUANTUM_QUACKERS.avatar}</span>
             <div className="flex flex-col">
-              <span className="text-lg font-bold text-yellow-400">{QUANTUM_QUACKERS.name}</span>
-              <span className="text-xs text-gray-400">{QUANTUM_QUACKERS.title}</span>
+              <span className="text-lg font-bold text-foreground">Exchange Scouts</span>
+              <span className="text-xs text-muted-foreground">Per-exchange connection intel</span>
             </div>
           </div>
           <Badge className="bg-green-600/20 text-green-400 border-green-600/50 text-sm font-bold">
-            THE PENNY REBELLION
+            Live Exchange Intel
           </Badge>
         </div>
       </CardHeader>
 
       <CardContent className="p-4">
         {/* Mission Statement */}
-        <div className="flex items-center justify-center gap-3 mb-4 p-3 bg-slate-800/50 rounded-lg">
-          <span className="text-xl">📜</span>
-          <span className="text-sm text-yellow-400 italic">"{QUANTUM_QUACKERS.signature}"</span>
+        <div className="flex items-center justify-center gap-3 mb-4 p-3 bg-muted/40 rounded-lg">
+          <span className="text-sm text-muted-foreground italic">Live per-exchange connection status</span>
         </div>
 
         {/* Irish Tricolor Divider */}
@@ -82,7 +79,7 @@ export function DuckCommandoIntel({
         </div>
 
         {/* Duck Commandos Section */}
-        <h3 className="text-center text-sm font-bold text-white mb-3">🎖️ DUCK COMMANDOS 🎖️</h3>
+        <h3 className="text-center text-sm font-bold text-foreground mb-3">Exchange Scouts</h3>
         
         <div className="grid grid-cols-2 gap-3 mb-4">
           {DUCK_COMMANDOS_LIST.map((duck) => {

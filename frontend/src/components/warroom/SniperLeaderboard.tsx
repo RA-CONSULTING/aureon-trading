@@ -88,9 +88,7 @@ export function SniperLeaderboard({
       {/* Header */}
       <CardHeader className="bg-gradient-to-r from-green-600/30 via-slate-800 to-orange-500/30 border-b border-slate-700 pb-3">
         <CardTitle className="flex items-center justify-center gap-3 text-lg">
-          <span className="text-xl animate-pulse">🎯</span>
-          <span className="font-extrabold tracking-wider text-white">SNIPER LEADERBOARD</span>
-          <span className="text-xl animate-pulse">☘️</span>
+          <span className="font-extrabold tracking-wider text-foreground">Signal Leaderboard</span>
         </CardTitle>
         <p className="text-center text-xs text-gray-400 italic mt-1">
           "{QUANTUM_QUACKERS.signature}"
