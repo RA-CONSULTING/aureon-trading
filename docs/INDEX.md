@@ -88,6 +88,7 @@ Master table of contents for all project documentation.
 | Document | Description |
 |----------|-------------|
 | [Sensor Suite](reports/SENSOR_SUITE.md) | **Start here** — every `aureon/bio/` lane (modality × boundary × data × benchmark) on one unchanged φ engine |
+| [φ Celestial Observatory](reports/CELESTIAL_OBSERVATORY.md) | **The capstone** — one instrument operating every sky lane through the one engine, with the consolidated picture |
 | [Human Harmonic Proxy](reports/HUMAN_HARMONIC_PROXY.md) | Core governed derived-signal scorer |
 | [Sky Fingerprint](reports/SKY_FINGERPRINT.md) · [Faint Sky / UPE](reports/FAINT_SKY_UPE.md) · [NASA Sky Data](reports/NASA_SKY_DATA.md) | Astronomical light lanes |
 | [Sky Map](reports/SKY_MAP.md) · [Cosmic Sensors](reports/COSMIC_SENSORS.md) · [Coherence Lane](reports/COHERENCE_LANE.md) | All-sky map + Schumann/planetary/space-weather + DE440 coherence |

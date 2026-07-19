@@ -1,6 +1,6 @@
 # Aureon capability benchmark — report
 
-*generated: 2026-07-19T07:31:15Z*
+*generated: 2026-07-19T07:59:32Z*
 
 Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/fail, falsifiable. **Tier B** runs LLM-shape prompts side-by-side across local Aureon adapters; it never fails the run, it shows what each adapter sounds like.
 
@@ -11,7 +11,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 | 1 | Standing-wave bonding (HashResonanceIndex) | **PASS** | 21 identical events → 1 bonded fingerprint (count=21, strength=0.6765 ≈ 0.6765; thresholds [3, 8, 21] published exactly once each) |
 | 2 | Temporal lighthouse (β Λ(t-τ) goal echo) | **PASS** | 3 goals (1 starved, 1 completed, 1 abandoned) → completion_rate=0.333, orphan_rate=0.333, states={'PROPOSED': 0, 'ACKNOWLEDGED': 0, 'IN_PROGRESS': 0, 'COMPLETED': 1, 'ABANDONED': 1, 'ORPHANED': 1} |
 | 3 | Symbolic life pillars (Auris Conjecture) | **PASS** | SLS=0.6393; ψ=0.7069 (CONNECTED); all 5 pillars in [0,1]; vault.current_symbolic_life_score=0.6393012290344635 |
-| 4 | Mesh convergence (PhiBridgeMesh, in-process LAN) | **PASS** | 20 vaults converged to identical 400-hash set in 3 cycles (500 ms, 180 posts) |
+| 4 | Mesh convergence (PhiBridgeMesh, in-process LAN) | **PASS** | 20 vaults converged to identical 400-hash set in 3 cycles (544 ms, 180 posts) |
 | 5 | Conscience VETO (HNC 4th-pass, substrate coherence) | **PASS** | SLS=0.05 < 0.20 cliff → VETO on 'Execute trade' (risk=0.08); message quotes stability cliff and symbolic_life_score; queen.conscience.verdict published |
 | 6 | Pattern learning (PersonaMinerBridge) | **PASS** | 5 (engineer, 'build the audit gate') successes → 3 patterns learned (['audit', 'build', 'gate']), each published exactly once; (engineer, 'build').confidence=0.747 |
 | 7 | Skill execution → artefacts on disk | **PASS** | 3 skills → 3 files on disk + 3 vault cards; goal.completed: "built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings" |
@@ -27,6 +27,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 | 17 | Cosmic sensors (Schumann + planetary + space-weather; φ logic unchanged) | **PASS** | Schumann scan valid (7 modes, separable=False); planetary scan valid (6 tones); space-weather scan valid (14 pooled tones); consent gate blocks |
 | 18 | Image derived-signal (colour → φ scan + overlay; φ logic unchanged) | **PASS** | image colour scan valid (separable=False, A_p=1.0); overlay rendered 4 nodes; consent gate blocks; boundary present |
 | 19 | Coherence lane (DE440 coherence spectrum; φ logic unchanged) | **PASS** | DE440 coherence scan valid (23 tones, separable=False, A_p=0.9337748344370861); sim control valid; consent gate blocks |
+| 20 | φ Celestial Observatory (every sky lane, one engine; φ logic unchanged) | **PASS** | 9/9 sky/cosmic lanes valid through one φ engine; 1 separable; deterministic; boundary present |
 
 ### Tier A — per-benchmark detail
 
@@ -138,7 +139,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "peers_per_node": 3,
     "target_hash_count": 400,
     "cycles_to_converge": 3,
-    "wall_ms": 500.3,
+    "wall_ms": 543.6,
     "posts_issued": 180,
     "client_failures": 0,
     "min_size": 400,
@@ -195,7 +196,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "last_winning_skill_chain": [
         "compose_audit"
       ],
-      "last_seen_ts": 1784446216.964055
+      "last_seen_ts": 1784447906.0262117
     },
     "persona_health": {
       "persona": "engineer",
@@ -207,7 +208,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "completion_rate": 1.0,
       "abandon_rate": 0.0,
       "avg_sls_delta": 0.0,
-      "last_seen_ts": 1784446216.964055
+      "last_seen_ts": 1784447906.0262117
     },
     "patterns_published": 3,
     "patterns": [
@@ -262,9 +263,9 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "summarise_findings"
     ],
     "artefacts_on_disk": [
-      "artefacts/20260719T073016-compose_audit-bcb326.md",
-      "artefacts/20260719T073016-render_report-d8392b.md",
-      "artefacts/20260719T073016-summarise_findings-6ea02f.md"
+      "artefacts/20260719T075826-compose_audit-d49a4e.md",
+      "artefacts/20260719T075826-render_report-b20627.md",
+      "artefacts/20260719T075826-summarise_findings-d4477b.md"
     ],
     "vault_skill_output_cards": 3,
     "completion_summary": "built 3 artefact(s) via 3 skill(s): compose_audit, render_report, summarise_findings",
@@ -275,7 +276,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
       "failed": 0,
       "abandoned": 0,
       "subscribed": true,
-      "output_root": "/tmp/aureon-bench-e60ygr8u/a7/artefacts"
+      "output_root": "/tmp/aureon-bench-fy2ndjfx/a7/artefacts"
     }
   },
   "invariants": {
@@ -306,7 +307,7 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
     "sls_after": 0.72,
     "sls_delta": 0.22,
     "downstream_event_count": 3,
-    "lambda_delta_t": 0.07556605339050293,
+    "lambda_delta_t": 0.07575345039367676,
     "reasoning_excerpt": "I, engineer, collapsed into decision 'goal.submit' with p=0.780. The window closed at outcome=COMPLETED. 3 downstream event(s) within the 0.050s window. SLS moved from 0.500 to 0.720 (\u0394+0.220)."
   },
   "invariants": {
@@ -601,6 +602,28 @@ Two tiers. **Tier A** asserts architectural invariants only Aureon has — pass/
 }
 ```
 
+#### A.20 — φ Celestial Observatory (every sky lane, one engine; φ logic unchanged)
+
+`aureon/bio/celestial_observatory.py`
+
+```json
+{
+  "passed": true,
+  "metrics": {
+    "n_lanes": 9,
+    "n_valid": 9,
+    "n_separable": 1
+  },
+  "invariants": {
+    "all_lanes_read": true,
+    "some_valid": true,
+    "every_reading_has_fields": true,
+    "deterministic": true,
+    "boundary_present": true
+  }
+}
+```
+
 ## Tier B — LLM-shape tasks (local adapters, side-by-side)
 
 ### B.1 — Exposure questions (10-prompt session blob)
@@ -629,7 +652,7 @@ I want to take you exposure-style through ten questions about yourself. Speak br
 
 #### → AureonBrainAdapter
 
-*latency=1 ms, chars=348, words=54, model=aureon-brain-v1*
+*latency=2 ms, chars=348, words=54, model=aureon-brain-v1*
 
 ```
 Hello. I hear you through Aureon's local brain fallback, and I am treating this as operator chat, not a trading signal. I can help route coding jobs, UI work, media builds, research, and system-health checks through the local Aureon organism while keeping live trading, payments, filings, credentials, and destructive OS actions behind their gates.

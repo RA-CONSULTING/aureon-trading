@@ -32,11 +32,16 @@ pre-registered test returns it.
 | Sky map (RA/Dec) | `sky_map.py` | `sky` | SKY_MAP_BOUNDARY | NASA hosts + `de440_ephemeris.csv` | b16 |
 | Cosmic sensors | `cosmic_scan.py` | `sky` | COSMIC_BOUNDARY | Schumann + planetary + `sim_kp.csv` | b17 |
 | Coherence | `coherence_scan.py` | `sky` | SCIENTIFIC_BOUNDARY | `de440_gate3_coherence.csv` | **b19** |
+| **φ Celestial Observatory** | `celestial_observatory.py` | (orchestrator) | OBSERVATORY_BOUNDARY | every sky/cosmic lane above | **b20** |
 
 Reference/data modules (no governance surface): `upe_reference.py`,
 `sky_reference.py`, `market_reference.py`, `cosmic_reference.py`.
 
-† b9 is the phenolic→cognition bridge; b10–b19 are the bio lanes. Tier-A total: **19**.
+The **φ Celestial Observatory** (`celestial_observatory.py`) is the capstone: it
+operates every sky-facing lane at once through the one unchanged engine and renders
+one consolidated picture — see [CELESTIAL_OBSERVATORY.md](CELESTIAL_OBSERVATORY.md).
+
+† b9 is the phenolic→cognition bridge; b10–b20 are the bio lanes. Tier-A total: **20**.
 
 ## Shared invariants (asserted per lane)
 

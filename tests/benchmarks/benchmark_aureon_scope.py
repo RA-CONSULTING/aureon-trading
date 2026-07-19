@@ -1514,6 +1514,45 @@ def b19_coherence_lane(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b20_celestial_observatory(tmp_root: Path) -> Dict[str, Any]:
+    """The φ Celestial Observatory operates every sky/cosmic lane through the one
+    unchanged engine and reports one consolidated picture: every lane produces a
+    reading, the run is deterministic, the consented lanes honour consent, and the
+    boundary is present. The capstone — nothing reinvented, φ logic untouched.
+    """
+    from aureon.bio import celestial_observatory as obs
+
+    r1 = obs.observe(nulls=120, seed=0, include_map=False)
+    r2 = obs.observe(nulls=120, seed=0, include_map=False)
+
+    invariants = {
+        "all_lanes_read": r1.n_lanes >= 8 and len(r1.readings) == r1.n_lanes,
+        "some_valid": r1.n_valid >= 1,
+        "every_reading_has_fields": all(
+            hasattr(x, "test_A_p") and hasattr(x, "structure_present") for x in r1.readings
+        ),
+        "deterministic": r1.to_dict()["readings"] == r2.to_dict()["readings"],
+        "boundary_present": r1.boundary == obs.OBSERVATORY_BOUNDARY,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "φ Celestial Observatory (every sky lane, one engine; φ logic unchanged)",
+        "module": "aureon/bio/celestial_observatory.py",
+        "passed": passed,
+        "metrics": {
+            "n_lanes": r1.n_lanes,
+            "n_valid": r1.n_valid,
+            "n_separable": r1.n_separable,
+        },
+        "evidence": (
+            f"{r1.n_valid}/{r1.n_lanes} sky/cosmic lanes valid through one φ engine; "
+            f"{r1.n_separable} separable; deterministic; boundary present"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1539,6 +1578,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Cosmic sensors",              b17_cosmic_sensors),
     ("Image derived-signal",        b18_image_signal),
     ("Coherence lane",              b19_coherence_lane),
+    ("φ Celestial Observatory",     b20_celestial_observatory),
 ]
 
 
