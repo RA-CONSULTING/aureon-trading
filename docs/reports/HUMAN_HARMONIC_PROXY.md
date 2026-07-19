@@ -316,6 +316,35 @@ python -m aureon.bio.proxy_suite --self-test
 python -m aureon.bio.proxy_suite --report suite.md --report-json suite.json
 ```
 
+## Null calibration — the false-positive-rate audit (`aureon/bio/null_calibration.py`)
+
+The conformance suite shows each adapter **detects** structure and, on one null draw, does not
+over-fire. The null-calibration audit proves the harder, statistical half: across **many**
+synthetic nulls, each adapter's rate of falsely reporting `structure_present` stays within the
+pre-registered bound. It is the statistical backbone of the falsifiability claim.
+
+- **Measures the real decision rule.** `structure_present` is exactly `p_A < ALPHA AND p_B < ALPHA`
+  from the engine's `test_A`/`test_B`; `score_signal` only wraps those two tests with controls +
+  governance and returns the same p-values. So the audit runs the engine's **own** two tests
+  directly on each adapter's real *folded null tones*, across many seeds — the identical rule,
+  without the redundant per-call controls, so a large trial count is affordable. It re-tunes nothing.
+- **The bound.** Under a true null each one-sided smoothed permutation p-value is ~uniform, so the
+  joint false-positive rate is **bounded above by ALPHA = 0.05** (nominal ≈ ALPHA² = 0.0025 under
+  independence, reported for context). The audit asserts the empirical rate stays ≤ ALPHA per
+  adapter **and** that the structured anchor still fires — a two-sided, non-vacuous check.
+- **Synthetic only.** Every draw is a synthetic null with no real subject; `CALIBRATION_BOUNDARY`
+  rides on every result. `write_calibration_report` emits a deterministic markdown + JSON artifact
+  (byte-identical on re-run), and `emit_calibration` publishes `bio.null_calibration.run` so the
+  metacognition monitor / Queen can sense that the family's false-positive rate is still bounded.
+
+```bash
+# Audit self-test — every adapter: FPR ≤ ALPHA and the structured anchor fires (exit 0 iff all conform).
+python -m aureon.bio.null_calibration --self-test
+
+# Write the evidence artifact (deterministic markdown + JSON).
+python -m aureon.bio.null_calibration --report calibration.md --report-json calibration.json
+```
+
 ## Run it
 
 ```bash

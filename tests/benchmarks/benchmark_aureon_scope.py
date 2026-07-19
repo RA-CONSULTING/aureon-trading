@@ -1979,6 +1979,72 @@ def b28_proxy_suite(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b29_null_calibration(tmp_root: Path) -> Dict[str, Any]:
+    """The family's false-positive rate is bounded, φ logic unchanged: for every shipped adapter
+    the engine's OWN Test A + Test B are run on many synthetic null signals, and the empirical rate
+    of falsely flagging structure_present stays ≤ ALPHA (nominal ≈ ALPHA²) while the structured
+    anchor still fires. It writes a durable markdown + JSON evidence artifact that round-trips and is
+    byte-identical on re-run, and exposes no person-reading surface. The statistical backbone of the
+    falsifiability claim — the detection rule does not hallucinate structure on noise.
+    """
+    import json
+
+    from aureon.bio import null_calibration as nc
+
+    report = nc.calibrate_nulls(trials=200, nulls=200, seed0=0)
+    out_md = tmp_root / "calibration.md"
+    out_json = tmp_root / "calibration.json"
+    rendered = nc.write_calibration_report(report, out_md, out_json)
+
+    md = out_md.read_text(encoding="utf-8") if out_md.exists() else ""
+    loaded = json.loads(out_json.read_text(encoding="utf-8")) if out_json.exists() else {}
+    row_lines = [ln for ln in md.splitlines() if ln.startswith("| ") and "---" not in ln]
+
+    out_md2 = tmp_root / "calibration2.md"
+    out_json2 = tmp_root / "calibration2.json"
+    nc.write_calibration_report(nc.calibrate_nulls(trials=200, nulls=200, seed0=0), out_md2, out_json2)
+
+    surface = [n.lower() for n in dir(nc)]
+    banned = ("face", "speaker", "voice", "pose", "emotion", "identity", "biometric")
+    max_fpr = max((r.fpr for r in report.readings), default=0.0)
+
+    invariants = {
+        "all_adapters_conform": report.n_adapters >= 4 and report.n_conforming == report.n_adapters,
+        "fpr_bounded": max_fpr <= nc.ALPHA,
+        "structured_anchors_fire": all(r.structured_fires for r in report.readings),
+        "both_files_nonempty": out_md.exists() and out_md.stat().st_size > 0
+        and out_json.exists() and out_json.stat().st_size > 0,
+        "json_round_trips": loaded.get("n_adapters") == report.n_adapters
+        and loaded.get("boundary") == nc.CALIBRATION_BOUNDARY,
+        "one_row_per_adapter": len(row_lines) == report.n_adapters + 1,  # + header row
+        "out_path_set": rendered.out_path == str(out_md),
+        "byte_identical_on_rewrite": out_md2.read_bytes() == out_md.read_bytes()
+        and out_json2.read_bytes() == out_json.read_bytes(),
+        "no_person_surface": not any(b in n for b in banned for n in surface),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Null calibration (family-wide false-positive-rate audit; φ logic unchanged)",
+        "module": "aureon/bio/null_calibration.py",
+        "passed": passed,
+        "metrics": {
+            "n_adapters": report.n_adapters,
+            "n_conforming": report.n_conforming,
+            "max_fpr": max_fpr,
+            "alpha": report.alpha,
+            "nominal_fpr": report.nominal_fpr,
+            "trials": report.trials,
+        },
+        "evidence": (
+            f"{report.n_conforming}/{report.n_adapters} adapters conform; max FPR={max_fpr:.4f} "
+            f"≤ ALPHA={report.alpha:g} (nominal ALPHA²={report.nominal_fpr:g}) over {report.trials} "
+            f"trials; structured anchors fire; durable md+JSON byte-identical; no person surface"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2013,6 +2079,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Audio signal adapter",         b26_audio_adapter),
     ("Video signal adapter",         b27_video_adapter),
     ("Signal-adapter conformance",   b28_proxy_suite),
+    ("Null calibration (FPR audit)",  b29_null_calibration),
 ]
 
 

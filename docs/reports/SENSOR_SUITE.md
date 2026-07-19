@@ -40,6 +40,7 @@ pre-registered test returns it.
 | Audio | `audio_signal_adapter.py` | `audio` | SCIENTIFIC_BOUNDARY | consented WAV / waveform → windowed-FFT dominant tones (global clip statistics; synthetic self-test) | **b26** |
 | Video | `video_signal_adapter.py` | `video` | SCIENTIFIC_BOUNDARY | consented clip / frame-stack → per-frame mean-luminance time-series → windowed-FFT dominant tones (global per-frame luminance; synthetic self-test) | **b27** |
 | **Conformance suite** | `proxy_suite.py` | (family roll-up) | SUITE_BOUNDARY | runs every self-testable adapter's synthetic structured/null self-test through the one unchanged engine; asserts each conforms; durable md+JSON artifact | **b28** |
+| **Null calibration** | `null_calibration.py` | (family FPR audit) | CALIBRATION_BOUNDARY | runs the engine's own Test A + Test B on each adapter's synthetic null many times; asserts empirical false-positive rate ≤ ALPHA while the structured anchor fires; durable md+JSON artifact | **b29** |
 
 Reference/data modules (no governance surface): `upe_reference.py`,
 `sky_reference.py`, `market_reference.py`, `cosmic_reference.py`, `sacred_lattice_reference.py`, `harmonic_core_reference.py`, `counter_frequency_reference.py`.
@@ -57,7 +58,7 @@ The **sacred lattice** (`sacred_lattice_scan.py`) is how the repo maps the sky *
 
 The **harmonic core** (`harmonic_core_scan.py`) goes one level deeper still — to the frequency substrate the framework itself is built on: the HNC **Master Formula Λ(t)** modes, the **Celtic Ogham** φ-scaled tree-tones, and the **Ghost Dance** ancestral Solfeggio ladder, each scanned through the same engine. See [HARMONIC_CORE.md](HARMONIC_CORE.md).
 
-† b9 is the phenolic→cognition bridge; b10–b27 are the bio lanes; b28 is the signal-adapter conformance roll-up over the family. Tier-A total: **28**.
+† b9 is the phenolic→cognition bridge; b10–b27 are the bio lanes; b28 is the signal-adapter conformance roll-up and b29 the family-wide false-positive-rate audit. Tier-A total: **29**.
 
 ## Shared invariants (asserted per lane)
 
@@ -78,5 +79,5 @@ face/landmark/detect/emotion/biometric/recognize). Convenience helpers that defa
 
 ```bash
 AUREON_LLM_OFFLINE=1 AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS=1 pytest tests/bio/ -q
-python tests/benchmarks/benchmark_aureon_scope.py     # Tier-A: 27 architectural invariants
+python tests/benchmarks/benchmark_aureon_scope.py     # Tier-A: 29 architectural invariants
 ```
