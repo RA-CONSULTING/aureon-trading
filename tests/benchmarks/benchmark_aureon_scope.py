@@ -2248,6 +2248,77 @@ def b32_multiplicity(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b33_false_discovery(tmp_root: Path) -> Dict[str, Any]:
+    """The detector controls false discoveries without giving up power, φ logic unchanged: across many
+    synthetic families mixing true-null and true-signal lanes, each lane's conjunction p-value
+    max(p_A, p_B) is fed to three decision rules — uncorrected (α), Bonferroni (α/m), and Benjamini–
+    Hochberg (level q). Bonferroni controls the family-wise error but is conservative and recovers few
+    signals; BH controls the false-discovery rate ≤ q AND, with q=α, rejects a superset of Bonferroni's
+    lanes, so it recovers strictly more true detections at controlled error. This is the FDR complement
+    to the FWER audit (b32), on top of size (b29), power (b30), and calibration (b31). A durable md +
+    JSON artifact round-trips and is byte-identical on re-run, and no person-reading surface exists.
+    """
+    import json
+
+    from aureon.bio import false_discovery as fd
+
+    report = fd.compute_false_discovery(
+        trials=60, nulls=600, m_null=10, m_signal=10, seed0=0
+    )
+    out_md = tmp_root / "fdr.md"
+    out_json = tmp_root / "fdr.json"
+    rendered = fd.write_false_discovery_report(report, out_md, out_json)
+
+    md = out_md.read_text(encoding="utf-8") if out_md.exists() else ""
+    loaded = json.loads(out_json.read_text(encoding="utf-8")) if out_json.exists() else {}
+    row_lines = [ln for ln in md.splitlines() if ln.startswith("| ") and "---" not in ln]
+
+    out_md2 = tmp_root / "fdr2.md"
+    out_json2 = tmp_root / "fdr2.json"
+    fd.write_false_discovery_report(report, out_md2, out_json2)
+
+    surface = [n.lower() for n in dir(fd)]
+    banned = ("face", "speaker", "voice", "pose", "emotion", "identity", "biometric")
+    by_name = {m.name: m for m in report.methods}
+    bh, bonf, unc = by_name["benjamini_hochberg"], by_name["bonferroni"], by_name["uncorrected"]
+    power_ordering = (unc.power >= bh.power - 1e-9) and (bh.power >= bonf.power - 1e-9)
+
+    invariants = {
+        "bh_controls_fdr": report.bh_controls_fdr,
+        "bh_dominates_bonferroni": report.bh_dominates_bonferroni,
+        "power_ordering": power_ordering,
+        "both_files_nonempty": out_md.exists() and out_md.stat().st_size > 0
+        and out_json.exists() and out_json.stat().st_size > 0,
+        "json_round_trips": loaded.get("n_methods") == report.n_methods
+        and loaded.get("boundary") == fd.FALSE_DISCOVERY_BOUNDARY,
+        "one_row_per_method": len(row_lines) == report.n_methods + 1,  # + header row
+        "out_path_set": rendered.out_path == str(out_md),
+        "byte_identical_on_rewrite": out_md2.read_bytes() == out_md.read_bytes()
+        and out_json2.read_bytes() == out_json.read_bytes(),
+        "no_person_surface": not any(b in n for b in banned for n in surface),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "False discovery rate (Benjamini–Hochberg control; φ logic unchanged)",
+        "module": "aureon/bio/false_discovery.py",
+        "passed": passed,
+        "metrics": {
+            "n_methods": report.n_methods,
+            "trials": report.trials,
+            "bh_fdr": bh.fdr,
+            "bh_power": bh.power,
+            "bonferroni_power": bonf.power,
+        },
+        "evidence": (
+            f"BH controls FDR ≤ q (FDR {bh.fdr:.4f} ≤ q {report.q:g} + tol {report.tolerance:g}) and "
+            f"rejects a superset of Bonferroni; BH recovers power {bh.power:.3f} vs Bonferroni "
+            f"{bonf.power:.3f} (uncorrected {unc.power:.3f}); durable md+JSON byte-identical; no person surface"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2286,6 +2357,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Detection power (sensitivity)",  b30_power_analysis),
     ("Calibration curve (null)",       b31_calibration_curve),
     ("Multiplicity (FWER control)",     b32_multiplicity),
+    ("False discovery rate (BH control)", b33_false_discovery),
 ]
 
 

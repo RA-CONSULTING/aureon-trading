@@ -430,6 +430,39 @@ python -m aureon.bio.multiplicity --self-test
 python -m aureon.bio.multiplicity --report mult.md --report-json mult.json
 ```
 
+## False discovery rate — Benjamini–Hochberg (`aureon/bio/false_discovery.py`)
+
+The multiplicity audit controls the probability of **any** false positive with a **Bonferroni** `α/m`
+threshold — safe, but famously **conservative**: to prevent one false alarm it discards real
+detections. The standard, less-conservative complement is **False Discovery Rate (FDR) control via
+Benjamini–Hochberg (BH)**, which bounds the expected *proportion* of false positives among the lanes it
+flags. This audit runs many synthetic **families** — each a mix of true-null lanes and true-signal
+lanes (structured tones degraded by jitter graded from strong to weak) — through the engine's own Test
+A + Test B, forms each lane's conjunction p-value `p = max(pₐ, p_b)`, and compares three rules:
+
+- **Honest three-way picture.** For **uncorrected** (α), **Bonferroni** (α/m), and **BH** (level q) it
+  reports mean rejections, power (true-positive rate), and FDR. Representative run (60 families of 20
+  lanes = 10 null + 10 signal at 5–45 Hz graded jitter, 600 nulls, q = α = 0.05): power
+  `0.49 / 0.05 / 0.27` and FDR `0.010 / 0.000 / 0.000` for uncorrected / Bonferroni / BH.
+- **BH controls FDR and buys back power.** BH holds the false-discovery rate ≤ q, and with `q = α` its
+  rejection set **always contains** Bonferroni's (verified per family) — so BH recovers **~5×** the true
+  detections Bonferroni does (0.27 vs 0.05) at the same controlled error. (The permutation p-value floor
+  `1/(nulls+1)` is kept below `α/m`, so the strict corrections are actually reachable.)
+- **Synthetic only.** `FALSE_DISCOVERY_BOUNDARY` on every result; deterministic markdown + JSON artifact
+  (byte-identical on re-run); `emit_false_discovery` publishes `bio.false_discovery.run`.
+
+The family's multiple-comparisons story is now complete across both error-control regimes — **FWER
+(b32, Bonferroni)** and **FDR (b33, Benjamini–Hochberg)** — on top of size (b29), power (b30), and
+calibration (b31).
+
+```bash
+# FDR self-test — BH controls FDR ≤ q and rejects a superset of Bonferroni.
+python -m aureon.bio.false_discovery --self-test
+
+# Write the false-discovery evidence artifact (deterministic markdown + JSON).
+python -m aureon.bio.false_discovery --report fdr.md --report-json fdr.json
+```
+
 ## Run it
 
 ```bash
