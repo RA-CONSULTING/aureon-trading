@@ -90,6 +90,14 @@ path) and Byzantine-tolerant to a minority of compromised or silent defenders (s
 overwhelmed only at 5-of-9). It consumes `bio.integrity_guard.run` and emits `bio.swarm_defense.run`.
 b34 senses, b35 responds.
 
+**Surfaced in the console.** The whole bio family — the sensor lanes, the statistical-validity dossier
+(b28–b33), and the cognitive immune layer (b34–b36) — is now exposed to the SaaS at **`GET /api/defense`**
+and rendered on the **Defense & Validation** page of the React console, grouped as *sensor lanes ·
+statistical-validity dossier · cognitive immune layer*. Status is read from the committed Tier-A
+benchmark report (real `passed`/`metrics`/`evidence`) with a live bus-trace overlay where a module has
+run — the modules are never executed on a web request, and a module with no data shows `no_data`, never
+a fabricated value.
+
 ## Shared invariants (asserted per lane)
 
 Every governed lane's tests assert: **valid + deterministic** scan; a **negative

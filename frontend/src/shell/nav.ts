@@ -30,6 +30,7 @@ import {
   Radar,
   Radio,
   Satellite,
+  ShieldCheck,
   Ship,
   SlidersHorizontal,
   Sparkles,
@@ -236,6 +237,19 @@ export const NAV_SECTIONS: NavSection[] = [
         description: "LLM provider API keys — add, test, and enable models",
         icon: KeyRound,
         Component: lazy(() => import("./pages/ProvidersPage")),
+        live: true,
+      },
+    ],
+  },
+  {
+    label: "Defense & Validation",
+    items: [
+      {
+        path: "/defense",
+        label: "Defense & Validation",
+        description: "The bio family — sensor lanes, statistical-validity dossier & the cognitive immune layer",
+        icon: ShieldCheck,
+        Component: lazy(() => import("./pages/DefensePage")),
         live: true,
       },
     ],
