@@ -181,5 +181,30 @@ Sensing and responding both assume the parasite is already *inside*. The layer's
 transit is detectable, contains inbound model output as data-never-instructions (injection quarantined,
 false blocked-action claims held, and false claims about Aureon's own pinned invariants rejected against
 ground truth), and proves the interior genome is **unchanged** across the crossing — logic flows out,
-contamination does not flow in. So the immune layer is now **sensor (b34) → effector (b35) → membrane
-(b36)**. Full write-up: [`MCP_BOUNDARY_MEMBRANE.md`](MCP_BOUNDARY_MEMBRANE.md).
+contamination does not flow in. Full write-up: [`MCP_BOUNDARY_MEMBRANE.md`](MCP_BOUNDARY_MEMBRANE.md).
+
+## The counterfeit sense — authenticity discriminator (b37)
+
+The membrane keeps a hostile model *out*; the fourth organ asks a subtler question about what tries to
+come *in as data*: is a signal claimed to be from a real system **genuine or a counterfeit**? A real
+plant and a fake plant made to imitate it look identical to the eye, but a genuine natural system carries
+a specific **harmonic + geometric makeup** an imitation lacks. The discriminator
+(`aureon/bio/authenticity_discriminator.py`, benchmark **b37**) reads that makeup with the engine's own
+two independent kernels — **harmonic** = `test_A` (coherence clustering), **geometric** = `test_B`
+(φ-interval alignment) — and separates the surface imitations: a coarse mimic reproduces neither axis, a
+signal clustered at non-φ centers passes the harmonic axis but fails the geometric one, and a φ-spaced
+singleton set does the reverse (the two axes are provably independent).
+
+The honest crux is the **Ditto / Gucci paradox**: a copy good enough to replicate every *measurable*
+feature is authentic by every *measurable* test — a **perfect structural clone** passes *both* structural
+axes, and structure alone cannot catch it. The resolution is **structure + provenance**: the genuine
+article also carries a *keyed* origin seal — an HMAC-SHA256 token over its canonical tone signature (the
+keyed complement to b36's keyless envelope) — that a cloner cannot forge without the secret key. So
+`authentic = structure_present AND provenance_valid`, and the clone is caught by the seal it cannot forge
+(`clone_blocked_by_provenance`). The irreducible limit is stated plainly: **a clone that also steals the
+key is authentic by every test.** The real key comes from `AUREON_AUTHENTICITY_KEY` (never committed); a
+fixed, documented non-secret test key is the default so self-tests are deterministic. Synthetic only, not
+a claim about any person, not a security proof. It emits `bio.authenticity.run`.
+
+So the immune layer is now **sensor (b34) → effector (b35) → membrane (b36) → counterfeit detector
+(b37)**.

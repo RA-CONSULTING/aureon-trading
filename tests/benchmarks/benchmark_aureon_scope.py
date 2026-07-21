@@ -2592,6 +2592,92 @@ def b36_mcp_membrane(tmp_root: Path) -> Dict[str, Any]:
     }
 
 
+def b37_authenticity(tmp_root: Path) -> Dict[str, Any]:
+    """The immune layer tells real from synthetic — and resolves the clone paradox, φ logic unchanged: a
+    genuine natural signal carries a specific harmonic (Test A clustering) + geometric (Test B φ-alignment)
+    makeup a surface imitation lacks. The discriminator classifies five synthetic classes — a genuine
+    signal, a coarse mimic (reproduces neither axis), a harmonic-only signal (clusters at non-φ centers →
+    passes Test A, fails Test B), a geometric-only signal (φ-spaced singletons → passes Test B, fails Test A),
+    and a perfect structural clone. The three surface imitations are blocked, each failing exactly the axis
+    it cannot reproduce (proving the two axes are independent). The perfect clone passes BOTH structural
+    tests — structure alone cannot catch it (the Ditto/Gucci paradox) — yet is caught by a keyed HMAC
+    provenance seal it cannot forge without the secret key. authentic = structure AND provenance. Honest
+    limit: a clone that also steals the key is authentic by every test. A durable md + JSON artifact
+    round-trips and is byte-identical on re-run, and no person-reading surface exists.
+    """
+    import json
+
+    from aureon.bio import authenticity_discriminator as ad
+
+    report = ad.compute_authenticity(trials=120, nulls=150, seed0=0)
+    out_md = tmp_root / "authenticity.md"
+    out_json = tmp_root / "authenticity.json"
+    rendered = ad.write_authenticity_report(report, out_md, out_json)
+
+    md = out_md.read_text(encoding="utf-8") if out_md.exists() else ""
+    loaded = json.loads(out_json.read_text(encoding="utf-8")) if out_json.exists() else {}
+    row_lines = [ln for ln in md.splitlines() if ln.startswith("| ") and "---" not in ln]
+
+    out_md2 = tmp_root / "authenticity2.md"
+    out_json2 = tmp_root / "authenticity2.json"
+    ad.write_authenticity_report(report, out_md2, out_json2)
+
+    # Per-axis independence: harmonic-only passes harmonic/fails geometric; geometric-only the reverse.
+    ho = ad._harmonic_only_tones(3, 2.0)
+    rh = ad.discriminate(ho, nulls=150, seed=3)
+    go = ad._geometric_only_tones(3, 2.0)
+    rg = ad.discriminate(go, nulls=150, seed=3)
+
+    by_name = {c.name: c for c in report.classes}
+    surface = [c for c in report.classes if c.is_surface_imitation]
+
+    surface_words = [n.lower() for n in dir(ad)]
+    banned = ("face", "speaker", "voice", "pose", "emotion", "identity", "biometric")
+
+    invariants = {
+        "authentic_detected": by_name["authentic"].authentic_rate >= 0.8,
+        "coarse_mimic_blocked": by_name["coarse_mimic"].authentic_rate <= 0.05,
+        "harmonic_only_fails_geometry": rh["harmonic_present"] and not rh["geometric_present"],
+        "geometric_only_fails_harmony": rg["geometric_present"] and not rg["harmonic_present"],
+        "surface_imitations_blocked": all(c.authentic_rate <= 0.2 for c in surface),
+        "clone_structurally_passes": report.clone_structural_rate >= 0.8,
+        "clone_blocked_by_provenance": report.clone_blocked_by_provenance
+        and report.clone_authentic_rate <= 0.05,
+        "separation_positive": report.separation > 0.0,
+        "both_files_nonempty": out_md.exists() and out_md.stat().st_size > 0
+        and out_json.exists() and out_json.stat().st_size > 0,
+        "json_round_trips": loaded.get("n_classes") == report.n_classes
+        and loaded.get("boundary") == ad.AUTHENTICITY_BOUNDARY,
+        "one_row_per_class": len(row_lines) == report.n_classes + 1,  # + header row
+        "byte_identical_on_rewrite": out_md2.read_bytes() == out_md.read_bytes()
+        and out_json2.read_bytes() == out_json.read_bytes(),
+        "out_path_set": rendered.out_path == str(out_md),
+        "no_person_surface": not any(b in n for b in banned for n in surface_words),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Authenticity discriminator (real vs synthetic + clone paradox; φ logic unchanged)",
+        "module": "aureon/bio/authenticity_discriminator.py",
+        "passed": passed,
+        "metrics": {
+            "authentic_rate": report.authentic_rate,
+            "max_surface_imitation_rate": report.max_surface_imitation_rate,
+            "clone_structural_rate": report.clone_structural_rate,
+            "clone_authentic_rate": report.clone_authentic_rate,
+            "separation": report.separation,
+        },
+        "evidence": (
+            f"genuine authentic {report.authentic_rate:.3f} vs strongest imitation "
+            f"{report.max_surface_imitation_rate:.3f} (separation {report.separation:.3f}); harmonic/geometric "
+            f"axes independent; perfect clone structurally passes {report.clone_structural_rate:.3f} but "
+            f"authentic only {report.clone_authentic_rate:.3f} → blocked by provenance; durable md+JSON "
+            f"byte-identical; no person surface"
+        ),
+        "invariants": invariants,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier A registry — order matters for the report.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2634,6 +2720,7 @@ TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
     ("Integrity guard (immune layer)",  b34_integrity_guard),
     ("Swarm defense (bee-ball quorum)", b35_swarm_defense),
     ("MCP boundary membrane",           b36_mcp_membrane),
+    ("Authenticity discriminator",      b37_authenticity),
 ]
 
 

@@ -2,11 +2,11 @@
 Defense & Validation catalog — the bio family surfaced for the console.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The bio package now carries 26 Tier-A-benchmarked modules — the derived-signal **sensor
+The bio package now carries 27 Tier-A-benchmarked modules — the derived-signal **sensor
 lanes**, the **statistical-validity dossier** (size, power, calibration, multiple-comparison
 error control), and the **cognitive immune layer** (integrity guard · swarm defense · MCP
-membrane). The SaaS catalog counts them anonymously; nothing presented them together, by
-group, with honest status.
+membrane · authenticity discriminator). The SaaS catalog counts them anonymously; nothing
+presented them together, by group, with honest status.
 
 This is that surface. It is **registry-as-data + report-derived status**: the grouping is
 static here; the live ``{passed, metrics, evidence, truth_status}`` is read from the committed
@@ -59,6 +59,7 @@ _GROUPS: Dict[str, str] = {
     "integrity_guard": "cognitive_immune_layer",
     "swarm_defense": "cognitive_immune_layer",
     "mcp_membrane": "cognitive_immune_layer",
+    "authenticity_discriminator": "cognitive_immune_layer",
     "proxy_suite": "statistical_validity",
     "null_calibration": "statistical_validity",
     "power_analysis": "statistical_validity",
@@ -72,6 +73,7 @@ _TRACE_NAMES: Dict[str, str] = {
     "integrity_guard": "integrity_guard",
     "swarm_defense": "swarm_defense",
     "mcp_membrane": "mcp_membrane",
+    "authenticity_discriminator": "authenticity_discriminator",
     "proxy_suite": "signal_adapter_suite",
     "null_calibration": "null_calibration",
     "power_analysis": "power_analysis",

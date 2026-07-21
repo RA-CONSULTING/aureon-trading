@@ -463,6 +463,38 @@ python -m aureon.bio.false_discovery --self-test
 python -m aureon.bio.false_discovery --report fdr.md --report-json fdr.json
 ```
 
+## Authenticity — real vs synthetic (the Ditto/Gucci paradox) (`aureon/bio/authenticity_discriminator.py`)
+
+A real plant and a fake plant made to imitate it can look identical to the eye — but a genuine natural
+system carries a specific **harmonic + geometric makeup** an imitation lacks. This is the immune layer's
+**counterfeit detector** (benchmark **b37**), and it reuses the b36 membrane's sealing idea in its keyed
+form. It classifies a signal *claimed* to be real along two structural axes — the engine's own
+independent kernels, nothing invented — plus a keyed origin seal:
+
+- **Harmonic makeup** → `test_A` (coherence clustering); **geometric makeup** → `test_B` (φ-interval
+  alignment); `structure_present ⇔ p_A < α AND p_B < α`.
+- **The axes are independent.** A *coarse mimic* (uniform in-band draw) reproduces neither. A
+  *harmonic-only* signal (tight clusters at non-φ centers) passes Test A but fails Test B; a
+  *geometric-only* signal (φ-spaced singletons, no within-cluster coherence) does the reverse.
+- **The clone paradox, resolved.** A **perfect structural clone** reproduces every measurable feature —
+  it passes *both* structural tests. Structure alone cannot catch it. A **keyed HMAC provenance seal**
+  can: the genuine article carries an origin token a cloner cannot forge without the secret key, so
+  `authentic = structure AND provenance` blocks the clone (`clone_blocked_by_provenance`). The honest
+  limit is stated plainly — **a clone that also steals the key is authentic by every test.**
+- **Honest scope + key hygiene.** Synthetic only, *not* a claim about any person and *not* a security
+  proof. The real production key comes from `AUREON_AUTHENTICITY_KEY` (never committed); a fixed,
+  documented **non-secret** test key is the default so self-tests are deterministic and artifacts are
+  byte-identical. `emit_authenticity` publishes `bio.authenticity.run`.
+
+```bash
+# Authenticity self-test — genuine detected, surface imitations blocked,
+# perfect clone structurally passes but blocked by provenance, separation > 0.
+python -m aureon.bio.authenticity_discriminator --self-test
+
+# Write the authenticity evidence artifact (deterministic markdown + JSON).
+python -m aureon.bio.authenticity_discriminator --report auth.md --report-json auth.json
+```
+
 ## Run it
 
 ```bash
