@@ -62,7 +62,17 @@ The **sacred lattice** (`sacred_lattice_scan.py`) is how the repo maps the sky *
 
 The **harmonic core** (`harmonic_core_scan.py`) goes one level deeper still — to the frequency substrate the framework itself is built on: the HNC **Master Formula Λ(t)** modes, the **Celtic Ogham** φ-scaled tree-tones, and the **Ghost Dance** ancestral Solfeggio ladder, each scanned through the same engine. See [HARMONIC_CORE.md](HARMONIC_CORE.md).
 
-† b9 is the phenolic→cognition bridge; b10–b27 are the bio lanes; b28 is the signal-adapter conformance roll-up, b29 the family-wide false-positive-rate audit, b30 the detection-power sensitivity sweep, b31 the per-test null-calibration curve, b32 the multiplicity / family-wise-error audit, and b33 the false-discovery-rate / Benjamini–Hochberg audit (b29+b30 = the ROC picture; b31 the calibration foundation under both; b32+b33 = the two multiple-comparisons regimes, FWER and FDR, that close the statistical-validity dossier). Tier-A total: **33**.
+† b9 is the phenolic→cognition bridge; b10–b27 are the bio lanes; b28 is the signal-adapter conformance roll-up, b29 the family-wide false-positive-rate audit, b30 the detection-power sensitivity sweep, b31 the per-test null-calibration curve, b32 the multiplicity / family-wise-error audit, and b33 the false-discovery-rate / Benjamini–Hochberg audit (b29+b30 = the ROC picture; b31 the calibration foundation under both; b32+b33 = the two multiple-comparisons regimes, FWER and FDR, that close the statistical-validity dossier). b34 is a different kind of check — not a sensor lane but the **cognitive immune layer** (see below). Tier-A total: **34**.
+
+## Integrity / immune layer (not a sensor lane)
+
+The **integrity guard** (`aureon/bio/integrity_guard.py`, benchmark **b34**) is the organism's active
+defense against *parasite logic* — an external change that silently rewrites the engine's pre-registered
+invariants or smuggles an instruction in as data. It pins the engine's genome (constants + a behavioral
+canary of what its own tests + controls must return on a canonical signal) and detects drift, and it
+quarantines external text carrying override directives (flag, never execute). It emits
+`bio.integrity_guard.run` to cognition so a tamper attempt is *sensed*, not silent. Defense-in-depth,
+detect-not-prevent — full write-up in [`docs/architecture/COGNITIVE_IMMUNE_LAYER.md`](../architecture/COGNITIVE_IMMUNE_LAYER.md).
 
 ## Shared invariants (asserted per lane)
 
@@ -83,5 +93,5 @@ face/landmark/detect/emotion/biometric/recognize). Convenience helpers that defa
 
 ```bash
 AUREON_LLM_OFFLINE=1 AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS=1 pytest tests/bio/ -q
-python tests/benchmarks/benchmark_aureon_scope.py     # Tier-A: 33 architectural invariants
+python tests/benchmarks/benchmark_aureon_scope.py     # Tier-A: 34 architectural invariants
 ```
