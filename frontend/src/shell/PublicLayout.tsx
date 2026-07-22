@@ -38,8 +38,10 @@ export default function PublicLayout() {
                 key={n.to}
                 to={n.to}
                 className={({ isActive }) =>
-                  `rounded-md px-3 py-1.5 text-sm transition-colors hover:text-foreground ${
-                    isActive ? "text-foreground" : "text-muted-foreground"
+                  `border-b-2 px-3 py-1.5 text-sm transition-colors hover:text-foreground ${
+                    isActive
+                      ? "border-primary font-medium text-foreground"
+                      : "border-transparent text-muted-foreground"
                   }`
                 }
               >

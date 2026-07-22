@@ -19,6 +19,8 @@ import {
   BadgeCheck,
   ScrollText,
   Coins,
+  Building2,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,10 +52,10 @@ const PILLARS = [
 ];
 
 const TRUST = [
-  { label: `Companies House ${COMPANY.companyNumber}`, detail: "Registered NI company" },
-  { label: "Innovate NI · Silver", detail: RECOGNITION.date },
-  { label: `${COMPANY.license} licensed`, detail: "Open source" },
-  { label: "Honest data provenance", detail: "No fabricated values" },
+  { icon: Building2, label: `Companies House ${COMPANY.companyNumber}`, detail: "Registered NI company" },
+  { icon: Award, label: "Innovate NI · Silver", detail: `Recognised ${RECOGNITION.date}` },
+  { icon: BadgeCheck, label: `${COMPANY.license} licensed`, detail: "Open source" },
+  { icon: ShieldCheck, label: "Honest data provenance", detail: "No fabricated values" },
 ];
 
 export default function LandingPage() {
@@ -73,46 +75,67 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl px-4">
-      {/* Hero */}
-      <section className="py-16 sm:py-24">
-        <Badge variant="outline" className="mb-5 gap-1.5 text-xs">
-          <BadgeCheck className="h-3.5 w-3.5 text-primary" />
-          By {COMPANY.registeredName}
-        </Badge>
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-          {PRODUCT.name} — {PRODUCT.tagline}
-        </h1>
-        <p className="mt-5 max-w-2xl text-lg text-muted-foreground">
-          {PRODUCT.summary}
-        </p>
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Button asChild size="lg">
-            <Link to="/console">
-              Open the console <ArrowRight className="ml-1.5 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link to="/evidence">See the evidence</Link>
-          </Button>
+    <div>
+      {/* Hero — a visual anchor: gold-on-slate wash + faint nexus motif behind the copy */}
+      <section className="relative overflow-hidden border-b border-border/60">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_120%_at_15%_-10%,hsl(var(--primary)/0.14),transparent_60%)]"
+        />
+        <svg
+          aria-hidden
+          viewBox="0 0 400 400"
+          className="pointer-events-none absolute -right-16 -top-16 h-[28rem] w-[28rem] text-primary/20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1"
+        >
+          {[40, 90, 140, 190].map((r) => (
+            <circle key={r} cx="200" cy="200" r={r} />
+          ))}
+          <path d="M200 10 L200 390 M10 200 L390 200" />
+        </svg>
+
+        <div className="relative mx-auto max-w-6xl px-4 py-20 sm:py-28">
+          <Badge variant="outline" className="mb-5 gap-1.5 bg-background/60 text-xs">
+            <BadgeCheck className="h-3.5 w-3.5 text-primary" />
+            By {COMPANY.tradingName}
+          </Badge>
+          <h1 className="max-w-3xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-6xl">
+            The grounded AI operating layer for{" "}
+            <span className="text-primary">high-control</span> work.
+          </h1>
+          <p className="mt-5 max-w-2xl text-lg text-muted-foreground">
+            {PRODUCT.name} — {PRODUCT.summary}
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Button asChild size="lg">
+              <Link to="/console">
+                Open the console <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/evidence">
+                See the evidence <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
-        <p className="mt-6 max-w-2xl text-xs text-muted-foreground">
-          Aureon OS is research and operational software — <strong className="text-foreground">not
-          financial advice</strong> and not an offer of securities. Trading carries substantial risk
-          to capital.{" "}
-          <Link to="/legal#risk" className="underline hover:text-foreground">Read the risk disclosure.</Link>
-        </p>
       </section>
 
-      {/* Trust strip */}
-      <section className="grid grid-cols-2 gap-3 border-y border-border/60 py-6 lg:grid-cols-4">
-        {TRUST.map((t) => (
-          <div key={t.label} className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">{t.label}</span>
-            <span className="text-xs text-muted-foreground">{t.detail}</span>
-          </div>
-        ))}
-      </section>
+      <div className="mx-auto max-w-6xl px-4">
+        {/* Trust strip — credibility with chrome, not flat gray text */}
+        <section className="grid grid-cols-2 gap-3 py-8 lg:grid-cols-4">
+          {TRUST.map((t) => (
+            <div key={t.label} className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm">
+              <t.icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">{t.label}</span>
+                <span className="text-xs text-muted-foreground">{t.detail}</span>
+              </div>
+            </div>
+          ))}
+        </section>
 
       {/* Pillars */}
       <section className="py-16">
@@ -139,7 +162,7 @@ export default function LandingPage() {
       </section>
 
       {/* Evidence teaser */}
-      <section className="py-8">
+      <section className="py-14">
         <Card className="border-primary/20 bg-primary/[0.03]">
           <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-4">
@@ -161,7 +184,7 @@ export default function LandingPage() {
       </section>
 
       {/* Commercial model — the real model, stated honestly (no invented tiers) */}
-      <section className="py-8">
+      <section className="py-14">
         <div className="flex items-center gap-2">
           <Coins className="h-5 w-5 text-primary" />
           <h2 className="text-2xl font-semibold tracking-tight">How Aureon is priced</h2>
@@ -190,17 +213,18 @@ export default function LandingPage() {
         </p>
       </section>
 
-      {/* Voice accent — a single line, not the headline */}
-      <section className="border-t border-border/60 py-10">
-        <p className="flex items-start gap-2 text-sm text-muted-foreground">
-          <ScrollText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-          <span>
-            The name is deliberate: a harmonic nexus — the same φ² coherence the research traces from
-            ancient structures to market dynamics. The mysticism is framing; the claims underneath are
-            measurable and pre-registered.
-          </span>
-        </p>
-      </section>
+        {/* Closing risk line — honest, understated, end of page (not in the hero) */}
+        <section className="border-t border-border/60 py-8">
+          <p className="flex items-start gap-2 text-xs text-muted-foreground">
+            <ScrollText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <span>
+              Aureon OS is research and operational software — not financial advice and not an offer
+              of securities. Trading carries substantial risk to capital.{" "}
+              <Link to="/legal#risk" className="underline hover:text-foreground">Read the risk disclosure.</Link>
+            </span>
+          </p>
+        </section>
+      </div>
     </div>
   );
 }
