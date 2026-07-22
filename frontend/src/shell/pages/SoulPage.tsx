@@ -144,7 +144,7 @@ export default function SoulPage() {
                   </p>
                 )}
                 {data.dissent.length > 0 && (
-                  <p className="text-xs text-amber-600">dissent: {data.dissent.join(", ")}</p>
+                  <p className="text-xs text-warning">dissent: {data.dissent.join(", ")}</p>
                 )}
               </CardContent>
             </Card>

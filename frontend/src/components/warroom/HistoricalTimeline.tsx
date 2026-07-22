@@ -53,8 +53,8 @@ export function HistoricalTimeline() {
             <Line 
               yAxisId="left"
               type="monotone" 
-              dataKey="lighthouse" 
-              stroke="#3b82f6" 
+              dataKey="lighthouse"
+              stroke="hsl(var(--chart-2))"
               strokeWidth={2}
               name="Lighthouse"
               dot={false}
@@ -62,8 +62,8 @@ export function HistoricalTimeline() {
             <Line 
               yAxisId="right"
               type="monotone" 
-              dataKey="balance" 
-              stroke="#10b981" 
+              dataKey="balance"
+              stroke="hsl(var(--success))"
               strokeWidth={2}
               name="Balance ($)"
               dot={false}

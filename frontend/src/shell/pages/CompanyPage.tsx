@@ -128,7 +128,7 @@ export default function CompanyPage() {
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-amber-500" />
+                  <Award className="h-4 w-4 text-warning" />
                   <CardTitle className="text-base">Recognition</CardTitle>
                 </div>
               </CardHeader>
@@ -145,7 +145,7 @@ export default function CompanyPage() {
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
-                  <HeartHandshake className="h-4 w-4 text-rose-500" />
+                  <HeartHandshake className="h-4 w-4 text-primary" />
                   <CardTitle className="text-base">Community</CardTitle>
                 </div>
               </CardHeader>

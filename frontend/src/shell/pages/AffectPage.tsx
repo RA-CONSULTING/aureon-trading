@@ -147,7 +147,7 @@ export default function AffectPage() {
                   <StatusBadge status={data.truth_status} />
                   <Badge variant="outline" className="text-[10px]">valence {data.valence.toFixed(2)}</Badge>
                   <Badge variant="outline" className="text-[10px]">arousal {data.arousal.toFixed(2)}</Badge>
-                  <Badge variant="outline" className={`text-[10px] ${data.caution_bias > 0 ? "text-amber-600 border-amber-500/30" : ""}`}>
+                  <Badge variant="outline" className={`text-[10px] ${data.caution_bias > 0 ? "text-warning border-warning/30" : ""}`}>
                     caution +{data.caution_bias.toFixed(3)}
                   </Badge>
                 </div>
