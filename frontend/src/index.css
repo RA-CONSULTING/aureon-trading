@@ -45,6 +45,10 @@ All colors MUST be HSL.
     --success: 142 62% 38%;
     --success-foreground: 0 0% 100%;
 
+    /* Caution amber — distinct from the brand gold, completes the status triad */
+    --warning: 32 94% 44%;
+    --warning-foreground: 40 45% 10%;
+
     /* Gold for highlights */
     --love: 38 92% 46%;
     --love-foreground: 40 45% 10%;
@@ -122,6 +126,8 @@ All colors MUST be HSL.
     --destructive-foreground: 0 0% 100%;
     --success: 142 58% 45%;
     --success-foreground: 0 0% 100%;
+    --warning: 36 94% 52%;
+    --warning-foreground: 40 45% 10%;
     --border: 217 16% 20%;
     --input: 217 16% 20%;
     --ring: 40 92% 55%;
