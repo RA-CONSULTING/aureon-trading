@@ -81,8 +81,8 @@ function roleFrom(m: AurisMetrics, a: AuraMetrics){
 
 function ToneBadge({tone, children}:{tone:string; children:React.ReactNode}){
   const map: Record<string,string> = {
-    emerald: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
-    sky:     "bg-sky-500/15 text-sky-300 ring-sky-500/30",
+    emerald: "bg-success/15 text-success ring-success/30",
+    sky:     "bg-primary/15 text-primary ring-primary/30",
     zinc:    "bg-zinc-700/40 text-zinc-200 ring-zinc-500/20",
   };
   return <span className={`px-2 py-1 rounded-xl text-xs ring-1 ${map[tone]||map.zinc}`}>{children}</span>
@@ -135,8 +135,8 @@ export default function NexusLiveDashboard(){
             <p className="text-zinc-400">Real-time biofield validation instrument</p>
           </div>
           <div className="flex items-center gap-4 text-xs">
-            <div className={`flex items-center gap-2 ${connected?'text-emerald-300':'text-zinc-400'}`}>
-              <span className={`w-2 h-2 rounded-full ${connected? 'bg-emerald-400':'bg-zinc-500'}`}></span>
+            <div className={`flex items-center gap-2 ${connected?'text-success':'text-zinc-400'}`}>
+              <span className={`w-2 h-2 rounded-full ${connected? 'bg-success':'bg-zinc-500'}`}></span>
               {connected? 'stream connected':'waiting for stream'}
             </div>
             <div className="px-2 py-1 rounded-lg bg-zinc-800 text-zinc-300 font-mono">
@@ -223,7 +223,7 @@ export default function NexusLiveDashboard(){
             <div className="mt-4 text-center">
               <button
                 onClick={handleSnapshot}
-                className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors">
+                className="px-6 py-3 rounded-xl bg-success hover:bg-success text-white font-medium transition-colors">
                 Snapshot Current State ⌘S
               </button>
             </div>

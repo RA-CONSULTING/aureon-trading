@@ -19,7 +19,7 @@ export const SolarWeatherDashboard = () => {
 
   const coherenceImpact = celestialBoost * 100;
   const impactLevel = coherenceImpact > 10 ? 'high' : coherenceImpact > 5 ? 'medium' : 'low';
-  const impactColor = impactLevel === 'high' ? 'text-green-500' : impactLevel === 'medium' ? 'text-yellow-500' : 'text-muted-foreground';
+  const impactColor = impactLevel === 'high' ? 'text-success' : impactLevel === 'medium' ? 'text-warning' : 'text-muted-foreground';
 
   return (
     <div className="space-y-6">
@@ -55,14 +55,14 @@ export const SolarWeatherDashboard = () => {
           </Card>
 
           {/* Solar Activity */}
-          <Card className="p-4 border-orange-500/30 bg-background/50">
+          <Card className="p-4 border-warning/30 bg-background/50">
             <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-5 h-5 text-orange-500" />
+              <Zap className="w-5 h-5 text-warning" />
               <h3 className="font-semibold text-foreground">Solar Activity</h3>
             </div>
             <div className="space-y-2">
-              <div className="text-2xl font-bold text-orange-500">MONITORING</div>
-              <Badge variant="outline" className="border-orange-500/50 text-orange-500">
+              <div className="text-2xl font-bold text-warning">MONITORING</div>
+              <Badge variant="outline" className="border-warning/50 text-warning">
                 X-Ray Flux Active
               </Badge>
               <p className="text-xs text-muted-foreground mt-2">
@@ -72,14 +72,14 @@ export const SolarWeatherDashboard = () => {
           </Card>
 
           {/* Moon Phase */}
-          <Card className="p-4 border-blue-500/30 bg-background/50">
+          <Card className="p-4 border-primary/30 bg-background/50">
             <div className="flex items-center gap-2 mb-2">
-              <Moon className="w-5 h-5 text-blue-500" />
+              <Moon className="w-5 h-5 text-primary" />
               <h3 className="font-semibold text-foreground">Lunar Influence</h3>
             </div>
             <div className="space-y-2">
-              <div className="text-2xl font-bold text-blue-500">ACTIVE</div>
-              <Badge variant="outline" className="border-blue-500/50 text-blue-500">
+              <div className="text-2xl font-bold text-primary">ACTIVE</div>
+              <Badge variant="outline" className="border-primary/50 text-primary">
                 Phase Tracking
               </Badge>
               <p className="text-xs text-muted-foreground mt-2">
@@ -110,8 +110,8 @@ export const SolarWeatherDashboard = () => {
           <div className="space-y-3">
             <div>
               <div className="text-sm text-muted-foreground mb-1">24h Forecast</div>
-              <div className="text-2xl font-bold text-yellow-500">G1 Watch</div>
-              <Badge variant="outline" className="mt-1 border-yellow-500/50 text-yellow-500">
+              <div className="text-2xl font-bold text-warning">G1 Watch</div>
+              <Badge variant="outline" className="mt-1 border-warning/50 text-warning">
                 Minor Storm
               </Badge>
             </div>
@@ -147,7 +147,7 @@ export const SolarWeatherDashboard = () => {
         <h3 className="text-xl font-semibold text-foreground mb-4">Predictive Analysis</h3>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
-            <div className="w-2 h-2 rounded-full bg-green-500 mt-2" />
+            <div className="w-2 h-2 rounded-full bg-success mt-2" />
             <div>
               <div className="font-semibold text-foreground">High Coherence Window</div>
               <p className="text-sm text-muted-foreground">
@@ -156,7 +156,7 @@ export const SolarWeatherDashboard = () => {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-2 h-2 rounded-full bg-yellow-500 mt-2" />
+            <div className="w-2 h-2 rounded-full bg-warning mt-2" />
             <div>
               <div className="font-semibold text-foreground">Planetary Alignment</div>
               <p className="text-sm text-muted-foreground">
@@ -165,7 +165,7 @@ export const SolarWeatherDashboard = () => {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-2 h-2 rounded-full bg-blue-500 mt-2" />
+            <div className="w-2 h-2 rounded-full bg-primary mt-2" />
             <div>
               <div className="font-semibold text-foreground">Solar Minimum Phase</div>
               <p className="text-sm text-muted-foreground">

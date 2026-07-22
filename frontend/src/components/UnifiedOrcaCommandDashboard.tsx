@@ -128,8 +128,8 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
       </div>
 
       {state.error && (
-        <div className="bg-red-900 border border-red-700 rounded p-4 mb-4">
-          <p className="text-red-200">⚠️ Error: {state.error}</p>
+        <div className="bg-destructive border border-destructive rounded p-4 mb-4">
+          <p className="text-destructive">⚠️ Error: {state.error}</p>
         </div>
       )}
 
@@ -164,7 +164,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
       <div className="grid grid-cols-3 gap-4 mb-6">
         {/* Left Panel: Orca Control */}
         <div className="col-span-1 bg-gray-900 rounded border border-gray-700 p-4">
-          <h2 className="text-xl font-bold mb-4 text-yellow-400">🐋 Orca Kill Cycle</h2>
+          <h2 className="text-xl font-bold mb-4 text-warning">🐋 Orca Kill Cycle</h2>
 
           <div className="space-y-3">
             <div className="bg-gray-800 rounded p-3">
@@ -176,15 +176,15 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
 
             <div className="bg-gray-800 rounded p-3">
               <p className="text-gray-400 text-sm">Ready for Execution</p>
-              <p className={`text-lg font-bold ${orcaReady ? 'text-green-400' : 'text-red-400'}`}>
+              <p className={`text-lg font-bold ${orcaReady ? 'text-success' : 'text-destructive'}`}>
                 {orcaReady ? '✅ YES' : '❌ NO'}
               </p>
             </div>
 
             {state.orcaStatus?.blockers && state.orcaStatus.blockers.length > 0 && (
-              <div className="bg-red-900 rounded p-3 text-sm">
-                <p className="text-red-200 font-bold mb-2">Blockers:</p>
-                <ul className="text-red-100">
+              <div className="bg-destructive rounded p-3 text-sm">
+                <p className="text-destructive font-bold mb-2">Blockers:</p>
+                <ul className="text-destructive">
                   {state.orcaStatus.blockers.map((b, i) => (
                     <li key={i}>• {b}</li>
                   ))}
@@ -198,7 +198,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
                 disabled={!orcaReady}
                 className={`py-2 px-3 rounded font-bold text-sm ${
                   orcaReady
-                    ? 'bg-green-600 hover:bg-green-700'
+                    ? 'bg-success hover:bg-success'
                     : 'bg-gray-600 cursor-not-allowed'
                 }`}
               >
@@ -206,19 +206,19 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => sendOrcaCommand('stop')}
-                className="py-2 px-3 rounded font-bold text-sm bg-red-600 hover:bg-red-700"
+                className="py-2 px-3 rounded font-bold text-sm bg-destructive hover:bg-destructive"
               >
                 ⏹️ Stop
               </button>
               <button
                 onClick={() => sendOrcaCommand('pause')}
-                className="py-2 px-3 rounded font-bold text-sm bg-yellow-600 hover:bg-yellow-700"
+                className="py-2 px-3 rounded font-bold text-sm bg-warning hover:bg-warning"
               >
                 ⏸️ Pause
               </button>
               <button
                 onClick={() => fetchUnifiedState()}
-                className="py-2 px-3 rounded font-bold text-sm bg-blue-600 hover:bg-blue-700"
+                className="py-2 px-3 rounded font-bold text-sm bg-primary hover:bg-primary"
               >
                 🔄 Refresh
               </button>
@@ -228,7 +228,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
 
         {/* Center Panel: Decisions Log */}
         <div className="col-span-1 bg-gray-900 rounded border border-gray-700 p-4">
-          <h2 className="text-xl font-bold mb-4 text-blue-400">📊 Recent Decisions</h2>
+          <h2 className="text-xl font-bold mb-4 text-primary">📊 Recent Decisions</h2>
 
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {state.decisions?.decisions && Object.entries(state.decisions.decisions).length > 0 ? (
@@ -239,9 +239,9 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
                     <span
                       className={`px-2 py-1 rounded text-xs font-bold ${
                         decision.type === 'buy'
-                          ? 'bg-green-900 text-green-200'
+                          ? 'bg-success text-success'
                           : decision.type === 'sell'
-                          ? 'bg-red-900 text-red-200'
+                          ? 'bg-destructive text-destructive'
                           : 'bg-gray-700 text-gray-200'
                       }`}
                     >
@@ -264,7 +264,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
 
         {/* Right Panel: Feeds & Risk */}
         <div className="col-span-1 bg-gray-900 rounded border border-gray-700 p-4">
-          <h2 className="text-xl font-bold mb-4 text-green-400">📡 Feed Status</h2>
+          <h2 className="text-xl font-bold mb-4 text-success">📡 Feed Status</h2>
 
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {state.feedsStatus ? (
@@ -273,7 +273,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
                   <div className="flex justify-between items-center mb-1">
                     <p className="font-mono text-sm">{name}</p>
                     <span
-                      className={`w-2 h-2 rounded-full ${feed.is_healthy ? 'bg-green-500' : 'bg-red-500'}`}
+                      className={`w-2 h-2 rounded-full ${feed.is_healthy ? 'bg-success' : 'bg-destructive'}`}
                     />
                   </div>
                   <p className="text-xs text-gray-400">
@@ -290,7 +290,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
 
       {/* System Coordination Panel */}
       <div className="bg-gray-900 rounded border border-gray-700 p-4">
-        <h2 className="text-xl font-bold mb-4 text-purple-400">🔗 System Coordination</h2>
+        <h2 className="text-xl font-bold mb-4 text-primary">🔗 System Coordination</h2>
 
         {state.coordinationState && (
           <div className="grid grid-cols-2 gap-4">
@@ -325,7 +325,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
 
             <div className="bg-gray-800 rounded p-3">
               <p className="text-gray-400 text-sm">Health</p>
-              <p className={`text-2xl font-bold ${state.systemHealth?.health_percentage === 100 ? 'text-green-400' : 'text-yellow-400'}`}>
+              <p className={`text-2xl font-bold ${state.systemHealth?.health_percentage === 100 ? 'text-success' : 'text-warning'}`}>
                 {state.systemHealth?.health_percentage.toFixed(0)}%
               </p>
             </div>
@@ -348,9 +348,9 @@ interface StatusCardProps {
 
 const StatusCard: React.FC<StatusCardProps> = ({ title, status, ready, details }) => {
   return (
-    <div className={`rounded border p-4 ${ready ? 'bg-green-900 border-green-700' : 'bg-gray-800 border-gray-700'}`}>
+    <div className={`rounded border p-4 ${ready ? 'bg-success border-success' : 'bg-gray-800 border-gray-700'}`}>
       <p className="text-gray-400 text-sm mb-2">{title}</p>
-      <p className={`text-xl font-bold mb-2 ${ready ? 'text-green-300' : 'text-gray-300'}`}>
+      <p className={`text-xl font-bold mb-2 ${ready ? 'text-success' : 'text-gray-300'}`}>
         {status}
       </p>
       <p className="text-xs text-gray-500">{details}</p>

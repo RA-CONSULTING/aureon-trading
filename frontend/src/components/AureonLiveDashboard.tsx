@@ -39,10 +39,10 @@ const EXCHANGE_ICONS: Record<string, string> = {
 };
 
 const EXCHANGE_COLORS: Record<string, string> = {
-  kraken: 'text-purple-400',
-  binance: 'text-yellow-400',
-  alpaca: 'text-green-400',
-  capital: 'text-blue-400',
+  kraken: 'text-primary',
+  binance: 'text-warning',
+  alpaca: 'text-success',
+  capital: 'text-primary',
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -93,14 +93,14 @@ export function AureonLiveDashboard() {
   return (
     <div className="space-y-4 p-4">
       {/* Connection Header */}
-      <Card className={`border-2 ${connected ? 'border-green-500/50' : 'border-red-500/50'}`}>
+      <Card className={`border-2 ${connected ? 'border-success/50' : 'border-destructive/50'}`}>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-bold flex items-center gap-2">
               {connected ? (
-                <Wifi className="h-6 w-6 text-green-500 animate-pulse" />
+                <Wifi className="h-6 w-6 text-success animate-pulse" />
               ) : (
-                <WifiOff className="h-6 w-6 text-red-500" />
+                <WifiOff className="h-6 w-6 text-destructive" />
               )}
               Aureon Live Bridge
             </CardTitle>
@@ -120,7 +120,7 @@ export function AureonLiveDashboard() {
           </div>
           <CardDescription>
             Updates: {updatesReceived} | Last: {formatTime(lastUpdate)}
-            {error && <span className="text-red-400 ml-2">| Error: {error}</span>}
+            {error && <span className="text-destructive ml-2">| Error: {error}</span>}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -137,7 +137,7 @@ export function AureonLiveDashboard() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-3xl font-bold text-green-400">
+            <div className="text-3xl font-bold text-success">
               {signalCount}
             </div>
             <div className="text-sm text-muted-foreground">Active Signals</div>
@@ -145,7 +145,7 @@ export function AureonLiveDashboard() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-3xl font-bold text-yellow-400">
+            <div className="text-3xl font-bold text-warning">
               {opportunities.length}
             </div>
             <div className="text-sm text-muted-foreground">Opportunities</div>
@@ -169,8 +169,8 @@ export function AureonLiveDashboard() {
                   key={name}
                   className={`p-3 rounded-lg border ${
                     data.connected 
-                      ? 'bg-green-500/10 border-green-500/30' 
-                      : 'bg-red-500/10 border-red-500/30'
+                      ? 'bg-success/10 border-success/30' 
+                      : 'bg-destructive/10 border-destructive/30'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -198,7 +198,7 @@ export function AureonLiveDashboard() {
                     </div>
                   </div>
                   {data.error && (
-                    <div className="mt-2 text-xs text-red-400 truncate">{data.error}</div>
+                    <div className="mt-2 text-xs text-destructive truncate">{data.error}</div>
                   )}
                 </div>
               ))}
@@ -229,7 +229,7 @@ export function AureonLiveDashboard() {
                 {systemsOnline.map(system => (
                   <Badge key={system} variant="default" className="text-xs py-1 px-2">
                     {SYSTEM_ICONS[system] || '⚡'} {system}
-                    <CheckCircle2 className="h-3 w-3 ml-1 text-green-400" />
+                    <CheckCircle2 className="h-3 w-3 ml-1 text-success" />
                   </Badge>
                 ))}
               </div>
@@ -242,7 +242,7 @@ export function AureonLiveDashboard() {
                     {systemsOffline.map(system => (
                       <Badge key={system} variant="outline" className="text-xs py-1 px-2 opacity-50">
                         {SYSTEM_ICONS[system] || '⚡'} {system}
-                        <AlertTriangle className="h-3 w-3 ml-1 text-yellow-500" />
+                        <AlertTriangle className="h-3 w-3 ml-1 text-warning" />
                       </Badge>
                     ))}
                   </div>
@@ -276,10 +276,10 @@ export function AureonLiveDashboard() {
                   key={`${signal.system}-${signal.symbol}-${idx}`}
                   className={`p-2 rounded-lg border ${
                     signal.signal_type === 'BUY' || signal.signal_type === 'CONVERT'
-                      ? 'bg-green-500/10 border-green-500/30'
+                      ? 'bg-success/10 border-success/30'
                       : signal.signal_type === 'SELL'
-                      ? 'bg-red-500/10 border-red-500/30'
-                      : 'bg-yellow-500/10 border-yellow-500/30'
+                      ? 'bg-destructive/10 border-destructive/30'
+                      : 'bg-warning/10 border-warning/30'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -326,7 +326,7 @@ export function AureonLiveDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-yellow-400" />
+              <Sparkles className="h-5 w-5 text-warning" />
               High Score Opportunities
             </CardTitle>
           </CardHeader>
@@ -335,13 +335,13 @@ export function AureonLiveDashboard() {
               {opportunities.map((opp, idx) => (
                 <div
                   key={`opp-${opp.symbol}-${idx}`}
-                  className="p-3 rounded-lg border bg-yellow-500/10 border-yellow-500/30"
+                  className="p-3 rounded-lg border bg-warning/10 border-warning/30"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-mono font-semibold text-yellow-400">
+                    <span className="font-mono font-semibold text-warning">
                       {opp.symbol}
                     </span>
-                    <Badge variant="default" className="bg-yellow-600">
+                    <Badge variant="default" className="bg-warning">
                       Score: {opp.score}/10
                     </Badge>
                   </div>
@@ -349,7 +349,7 @@ export function AureonLiveDashboard() {
                     <span className="text-muted-foreground">
                       {SYSTEM_ICONS[opp.system]} {opp.system}
                     </span>
-                    <span className="text-green-400">
+                    <span className="text-success">
                       {(opp.confidence * 100).toFixed(0)}% confidence
                     </span>
                   </div>
@@ -382,14 +382,14 @@ export function AureonLiveDashboard() {
                 key={`${mover.symbol}-${idx}`}
                 className={`p-2 rounded-lg border text-center ${
                   mover.change > 0 
-                    ? 'bg-green-500/10 border-green-500/30' 
-                    : 'bg-red-500/10 border-red-500/30'
+                    ? 'bg-success/10 border-success/30' 
+                    : 'bg-destructive/10 border-destructive/30'
                 }`}
               >
                 <div className="font-mono text-xs truncate" title={mover.symbol}>
                   {mover.symbol.substring(0, 8)}
                 </div>
-                <div className={`text-sm font-semibold ${mover.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <div className={`text-sm font-semibold ${mover.change > 0 ? 'text-success' : 'text-destructive'}`}>
                   {mover.change > 0 ? (
                     <TrendingUp className="h-3 w-3 inline mr-1" />
                   ) : (

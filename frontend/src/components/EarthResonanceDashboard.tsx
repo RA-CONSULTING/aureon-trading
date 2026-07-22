@@ -158,25 +158,25 @@ export const EarthResonanceDashboard = () => {
           </div>
           <div className="flex items-center justify-center gap-2">
             {validation.seismicStable ? (
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <CheckCircle2 className="h-5 w-5 text-success" />
             ) : (
-              <XCircle className="h-5 w-5 text-red-500" />
+              <XCircle className="h-5 w-5 text-destructive" />
             )}
             <span className="text-sm">Seismic Stable</span>
           </div>
           <div className="flex items-center justify-center gap-2">
             {validation.schumannStable ? (
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <CheckCircle2 className="h-5 w-5 text-success" />
             ) : (
-              <XCircle className="h-5 w-5 text-red-500" />
+              <XCircle className="h-5 w-5 text-destructive" />
             )}
             <span className="text-sm">Schumann Nominal</span>
           </div>
           <div className="flex items-center justify-center gap-2">
             {validation.coherenceHigh ? (
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <CheckCircle2 className="h-5 w-5 text-success" />
             ) : (
-              <XCircle className="h-5 w-5 text-red-500" />
+              <XCircle className="h-5 w-5 text-destructive" />
             )}
             <span className="text-sm">High Coherence</span>
           </div>
@@ -355,7 +355,7 @@ export const EarthResonanceDashboard = () => {
           </div>
           
           {validation.seismicStable && validation.schumannStable && validation.coherenceHigh && (
-            <div className="border-l-4 border-green-500 pl-4">
+            <div className="border-l-4 border-success pl-4">
               <p className="text-sm font-medium">✨ Perfect Alignment Detected</p>
               <p className="text-xs text-muted-foreground mt-1">
                 All systems validating each other! This is an optimal window for high-probability trades. 
@@ -374,7 +374,7 @@ export const EarthResonanceDashboard = () => {
             </div>
           )}
 
-          <div className="border-l-4 border-blue-500 pl-4">
+          <div className="border-l-4 border-primary pl-4">
             <p className="text-sm font-medium">🌍 Deep Earth Resonance Theory</p>
             <p className="text-xs text-muted-foreground mt-1">
               Seismic activity and Schumann resonance both originate from Earth's electromagnetic field. 

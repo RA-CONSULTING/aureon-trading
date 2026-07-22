@@ -509,7 +509,7 @@ export function BacktestingInterface() {
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg border border-border/30">
                     <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
-                    <p className="text-2xl font-bold font-mono text-green-500">{results.winRate.toFixed(1)}%</p>
+                    <p className="text-2xl font-bold font-mono text-success">{results.winRate.toFixed(1)}%</p>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg border border-border/30">
                     <p className="text-xs text-muted-foreground mb-1">Total Return</p>
@@ -577,7 +577,7 @@ export function BacktestingInterface() {
                   </div>
                   <div className="p-3 bg-background/50 rounded border border-border/30">
                     <p className="text-xs text-muted-foreground">Avg Win</p>
-                    <p className="text-lg font-bold font-mono text-green-500">+{results.avgWin.toFixed(2)}%</p>
+                    <p className="text-lg font-bold font-mono text-success">+{results.avgWin.toFixed(2)}%</p>
                   </div>
                   <div className="p-3 bg-background/50 rounded border border-border/30">
                     <p className="text-xs text-muted-foreground">Avg Loss</p>

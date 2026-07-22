@@ -57,7 +57,7 @@ export default function WarRoomDashboard() {
             <p className="text-muted-foreground mt-1 flex items-center gap-2">
               Autonomous Trading • Live Quantum State • Temporal Ladder
               {globalState.isRunning && (
-                <Badge variant="default" className="bg-green-500 animate-pulse">
+                <Badge variant="default" className="bg-success animate-pulse">
                   SYSTEMS ONLINE
                 </Badge>
               )}
