@@ -9,7 +9,7 @@ import {
 } from '../types';
 
 /**
- * 🎯 UNIFIED ORCA COMMAND DASHBOARD
+ *  UNIFIED ORCA COMMAND DASHBOARD
  *
  * Central command center for monitoring and controlling the Orca kill cycle
  * with real-time system coordination, feed status, and trading decisions.
@@ -97,7 +97,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
         <div className="text-center">
-          <div className="text-3xl mb-4">🎯</div>
+          <div className="text-3xl mb-4"></div>
           <p>Loading Unified Dashboard...</p>
         </div>
       </div>
@@ -114,7 +114,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
       <div className="mb-6 border-b border-gray-700 pb-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold mb-2">🎯 Aureon Unified Dashboard</h1>
+            <h1 className="text-3xl font-bold mb-2"> Aureon Unified Dashboard</h1>
             <p className="text-gray-400">
               Real-time Orca Kill Cycle Control & System Coordination
             </p>
@@ -129,32 +129,32 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
 
       {state.error && (
         <div className="bg-destructive border border-destructive rounded p-4 mb-4">
-          <p className="text-destructive">⚠️ Error: {state.error}</p>
+          <p className="text-destructive"> Error: {state.error}</p>
         </div>
       )}
 
       {/* Top Status Bar */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <StatusCard
-          title="🐋 Orca Status"
+          title=" Orca Status"
           status={state.orcaStatus?.status || 'unknown'}
           ready={orcaReady}
           details={`${state.orcaStatus?.blockers?.length || 0} blockers`}
         />
         <StatusCard
-          title="🔗 System Coordination"
+          title=" System Coordination"
           status={state.coordinationState?.orca_ready ? 'Ready' : 'Not Ready'}
           ready={state.coordinationState?.orca_ready || false}
           details={`${state.systemHealth?.healthy || 0}/${state.systemHealth?.total || 0} systems`}
         />
         <StatusCard
-          title="📡 Feeds"
+          title=" Feeds"
           status={feedsHealthy ? 'Healthy' : 'Degraded'}
           ready={feedsHealthy}
           details={`${Object.values(state.feedsStatus || {}).reduce((sum, f) => sum + f.event_count, 0)} events`}
         />
         <StatusCard
-          title="⚡ Overall"
+          title=" Overall"
           status={orcaReady && allSystemsHealthy ? 'READY' : 'STANDBY'}
           ready={orcaReady && allSystemsHealthy}
           details={orcaReady && allSystemsHealthy ? 'All systems go' : 'Awaiting conditions'}
@@ -164,7 +164,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
       <div className="grid grid-cols-3 gap-4 mb-6">
         {/* Left Panel: Orca Control */}
         <div className="col-span-1 bg-gray-900 rounded border border-gray-700 p-4">
-          <h2 className="text-xl font-bold mb-4 text-warning">🐋 Orca Kill Cycle</h2>
+          <h2 className="text-xl font-bold mb-4 text-warning"> Orca Kill Cycle</h2>
 
           <div className="space-y-3">
             <div className="bg-gray-800 rounded p-3">
@@ -177,7 +177,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
             <div className="bg-gray-800 rounded p-3">
               <p className="text-gray-400 text-sm">Ready for Execution</p>
               <p className={`text-lg font-bold ${orcaReady ? 'text-success' : 'text-destructive'}`}>
-                {orcaReady ? '✅ YES' : '❌ NO'}
+                {orcaReady ? ' YES' : ' NO'}
               </p>
             </div>
 
@@ -202,25 +202,25 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
                     : 'bg-gray-600 cursor-not-allowed'
                 }`}
               >
-                ▶️ Start
+                 Start
               </button>
               <button
                 onClick={() => sendOrcaCommand('stop')}
                 className="py-2 px-3 rounded font-bold text-sm bg-destructive hover:bg-destructive"
               >
-                ⏹️ Stop
+                 Stop
               </button>
               <button
                 onClick={() => sendOrcaCommand('pause')}
                 className="py-2 px-3 rounded font-bold text-sm bg-warning hover:bg-warning"
               >
-                ⏸️ Pause
+                 Pause
               </button>
               <button
                 onClick={() => fetchUnifiedState()}
                 className="py-2 px-3 rounded font-bold text-sm bg-primary hover:bg-primary"
               >
-                🔄 Refresh
+                 Refresh
               </button>
             </div>
           </div>
@@ -228,7 +228,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
 
         {/* Center Panel: Decisions Log */}
         <div className="col-span-1 bg-gray-900 rounded border border-gray-700 p-4">
-          <h2 className="text-xl font-bold mb-4 text-primary">📊 Recent Decisions</h2>
+          <h2 className="text-xl font-bold mb-4 text-primary"> Recent Decisions</h2>
 
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {state.decisions?.decisions && Object.entries(state.decisions.decisions).length > 0 ? (
@@ -264,7 +264,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
 
         {/* Right Panel: Feeds & Risk */}
         <div className="col-span-1 bg-gray-900 rounded border border-gray-700 p-4">
-          <h2 className="text-xl font-bold mb-4 text-success">📡 Feed Status</h2>
+          <h2 className="text-xl font-bold mb-4 text-success"> Feed Status</h2>
 
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {state.feedsStatus ? (
@@ -290,7 +290,7 @@ const UnifiedOrcaCommandDashboard: React.FC = () => {
 
       {/* System Coordination Panel */}
       <div className="bg-gray-900 rounded border border-gray-700 p-4">
-        <h2 className="text-xl font-bold mb-4 text-primary">🔗 System Coordination</h2>
+        <h2 className="text-xl font-bold mb-4 text-primary"> System Coordination</h2>
 
         {state.coordinationState && (
           <div className="grid grid-cols-2 gap-4">

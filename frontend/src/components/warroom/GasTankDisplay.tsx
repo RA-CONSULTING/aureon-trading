@@ -38,10 +38,10 @@ export const GasTankDisplay = ({ userId, onEmpty }: GasTankDisplayProps) => {
 
   // Determine status emoji
   const getStatusEmoji = () => {
-    if (gasTank.status === 'EMPTY') return '⚫';
-    if (gasTank.status === 'CRITICAL') return '🔴';
-    if (gasTank.status === 'LOW') return '🟡';
-    return '🟢';
+    if (gasTank.status === 'EMPTY') return '';
+    if (gasTank.status === 'CRITICAL') return '';
+    if (gasTank.status === 'LOW') return '';
+    return '';
   };
 
   const handleTopUp = async () => {
@@ -82,7 +82,7 @@ export const GasTankDisplay = ({ userId, onEmpty }: GasTankDisplayProps) => {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-xl">⛽</span>
+                <span className="text-xl"></span>
                 <h3 className="font-bold text-sm">GAS TANK</h3>
               </div>
               <div className="flex items-center gap-2">
@@ -140,14 +140,14 @@ export const GasTankDisplay = ({ userId, onEmpty }: GasTankDisplayProps) => {
               className="w-full bg-gradient-to-r from-primary to-primary/80"
               size="sm"
             >
-              ➕ Top Up
+               Top Up
             </Button>
 
             {/* Empty Overlay */}
             {gasTank.status === 'EMPTY' && (
               <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
                 <div className="text-center p-4">
-                  <p className="text-2xl mb-2">⛽</p>
+                  <p className="text-2xl mb-2"></p>
                   <p className="font-bold text-destructive mb-2">GAS TANK EMPTY</p>
                   <p className="text-xs text-muted-foreground mb-3">Trading Paused</p>
                   <Button
@@ -168,7 +168,7 @@ export const GasTankDisplay = ({ userId, onEmpty }: GasTankDisplayProps) => {
       <Dialog open={showTopUpModal} onOpenChange={setShowTopUpModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>⛽ Top Up Gas Tank</DialogTitle>
+            <DialogTitle> Top Up Gas Tank</DialogTitle>
             <DialogDescription>
               Add credits to your gas tank to continue trading
             </DialogDescription>

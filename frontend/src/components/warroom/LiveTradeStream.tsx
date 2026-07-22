@@ -94,7 +94,7 @@ export function LiveTradeStream() {
             Live Trade Stream
           </span>
           <Badge variant={isConnected ? 'default' : 'secondary'} className={isConnected ? 'bg-success' : ''}>
-            {isConnected ? '🟢 LIVE' : '⚪ OFFLINE'}
+            {isConnected ? ' LIVE' : ' OFFLINE'}
           </Badge>
         </CardTitle>
       </CardHeader>

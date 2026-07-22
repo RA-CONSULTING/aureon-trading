@@ -175,7 +175,7 @@ export function CredentialStatusPanel({ userId }: CredentialStatusPanelProps) {
               {exchange.configured ? (
                 <>
                   <Badge variant="outline" className="text-xs">
-                    {exchange.connected === true ? '🟢 LIVE' : exchange.connected === false ? '🔴 OFFLINE' : '⚪ Untested'}
+                    {exchange.connected === true ? ' LIVE' : exchange.connected === false ? ' OFFLINE' : ' Untested'}
                   </Badge>
                   <Button
                     variant="ghost"

@@ -9,7 +9,7 @@ export function HistoricalTimeline() {
     return (
       <Card className="bg-card/50 backdrop-blur border-primary/20">
         <CardHeader>
-          <CardTitle>📊 Historical Performance (24h)</CardTitle>
+          <CardTitle> Historical Performance (24h)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64 flex items-center justify-center">
@@ -23,7 +23,7 @@ export function HistoricalTimeline() {
   return (
     <Card className="bg-card/50 backdrop-blur border-primary/20">
       <CardHeader>
-        <CardTitle>📊 Historical Performance (24h)</CardTitle>
+        <CardTitle> Historical Performance (24h)</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={250}>

@@ -43,10 +43,10 @@ export function PrismFrequencyPanel() {
   }
   
   const stateEmoji = {
-    FORMING: '🔶',
-    CONVERGING: '🔷',
-    MANIFEST: '💚',
-  }[prismOutput.state] || '⚪';
+    FORMING: '',
+    CONVERGING: '',
+    MANIFEST: '',
+  }[prismOutput.state] || '';
   
   const levelLabels = ['HNC', 'IN', 'CREATE', 'REFLECT', 'UNITY', 'LOVE'];
   

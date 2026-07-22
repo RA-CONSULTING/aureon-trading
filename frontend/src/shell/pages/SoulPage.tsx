@@ -136,7 +136,7 @@ export default function SoulPage() {
               <CardContent className="space-y-2">
                 <p className="text-sm">{data.determination}</p>
                 {data.what_gary_would_say && (
-                  <p className="text-xs text-muted-foreground">🔱 Gary would say: “{data.what_gary_would_say}”</p>
+                  <p className="text-xs text-muted-foreground"> Gary would say: “{data.what_gary_would_say}”</p>
                 )}
                 {data.proposed_action && (
                   <p className="text-xs font-mono text-muted-foreground">

@@ -1,5 +1,5 @@
 /**
- * 🎯🦆 SNIPER LEADERBOARD ☘️
+ *  SNIPER LEADERBOARD 
  * ==========================
  * 
  * Rankings of symbols by penny-profit kills.
@@ -140,10 +140,10 @@ export function SniperLeaderboard({
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <span className="text-xs text-gray-400">Sort by:</span>
           {[
-            { key: 'kills', label: '🎯 Kills' },
-            { key: 'pnl', label: '💰 PnL' },
-            { key: 'quickKillRate', label: '⚡ Speed' },
-            { key: 'avgBars', label: '📊 Bars' },
+            { key: 'kills', label: ' Kills' },
+            { key: 'pnl', label: ' PnL' },
+            { key: 'quickKillRate', label: ' Speed' },
+            { key: 'avgBars', label: ' Bars' },
           ].map(({ key, label }) => (
             <Button
               key={key}
@@ -161,7 +161,7 @@ export function SniperLeaderboard({
         <ScrollArea className="h-[350px]">
           {symbolStats.length === 0 && (
             <div className="flex flex-col items-center justify-center h-[320px] text-center px-6">
-              <span className="text-3xl mb-2 opacity-60">🎯</span>
+              <span className="text-3xl mb-2 opacity-60"></span>
               <p className="text-sm text-gray-300 font-semibold">No sniper telemetry yet</p>
               <p className="text-xs text-gray-500 mt-1">
                 Awaiting live trades — kill stats populate from real executions as they happen.
@@ -181,7 +181,7 @@ export function SniperLeaderboard({
                 const duck = getDuckForExchange(ex);
                 return (
                   <div key={ex} className="text-center" title={duck?.realName || ex}>
-                    {duck?.avatar || '💱'}
+                    {duck?.avatar || ''}
                   </div>
                 );
               })}
@@ -198,9 +198,9 @@ export function SniperLeaderboard({
                 }`}
               >
                 <div className="text-center font-bold">
-                  {index === 0 && '🥇'}
-                  {index === 1 && '🥈'}
-                  {index === 2 && '🥉'}
+                  {index === 0 && ''}
+                  {index === 1 && ''}
+                  {index === 2 && ''}
                   {index >= 3 && index + 1}
                 </div>
                 <div className="col-span-2 font-bold text-white">{stat.symbol}</div>

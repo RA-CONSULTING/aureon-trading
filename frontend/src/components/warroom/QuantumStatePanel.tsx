@@ -25,10 +25,10 @@ export function QuantumStatePanel({ quantumState, hiveMindCoherence }: Props) {
     <Card className="bg-card/50 backdrop-blur border-primary/20">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>🌊 Quantum Field State</span>
+          <span> Quantum Field State</span>
           {quantumState.isLHE && (
             <Badge variant="destructive" className="animate-pulse">
-              🔥 LHE ACTIVE
+               LHE ACTIVE
             </Badge>
           )}
         </CardTitle>

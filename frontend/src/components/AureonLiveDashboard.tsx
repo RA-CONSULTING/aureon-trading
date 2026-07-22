@@ -1,5 +1,5 @@
 /**
- * 🌉 AUREON LIVE BRIDGE DASHBOARD 🌉
+ *  AUREON LIVE BRIDGE DASHBOARD 
  * Prime Sentinel: GARY LECKEY 02111991
  * 
  * Displays LIVE data from ALL trading platforms and ALL systems
@@ -32,10 +32,10 @@ import { useAureonLiveData } from '@/hooks/useAureonLiveData';
 // ════════════════════════════════════════════════════════════════════════════
 
 const EXCHANGE_ICONS: Record<string, string> = {
-  kraken: '🦑',
-  binance: '🔶',
-  alpaca: '🦙',
-  capital: '📈',
+  kraken: '',
+  binance: '',
+  alpaca: '',
+  capital: '',
 };
 
 const EXCHANGE_COLORS: Record<string, string> = {
@@ -50,14 +50,14 @@ const EXCHANGE_COLORS: Record<string, string> = {
 // ════════════════════════════════════════════════════════════════════════════
 
 const SYSTEM_ICONS: Record<string, string> = {
-  V14: '🏆',
-  Mycelium: '🍄',
-  Commando: '🦅',
-  Nexus: '🔮',
-  Multiverse: '🌌',
-  MinerBrain: '🧠',
-  Harmonic: '🌊',
-  Omega: '🔱',
+  V14: '',
+  Mycelium: '',
+  Commando: '',
+  Nexus: '',
+  Multiverse: '',
+  MinerBrain: '',
+  Harmonic: '',
+  Omega: '',
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -175,7 +175,7 @@ export function AureonLiveDashboard() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className={`text-lg font-semibold ${EXCHANGE_COLORS[name] || 'text-gray-400'}`}>
-                      {EXCHANGE_ICONS[name] || '📊'} {name.toUpperCase()}
+                      {EXCHANGE_ICONS[name] || ''} {name.toUpperCase()}
                     </span>
                     <Badge variant={data.connected ? 'default' : 'destructive'} className="text-xs">
                       {data.connected ? 'LIVE' : 'OFF'}
@@ -228,7 +228,7 @@ export function AureonLiveDashboard() {
               <div className="flex flex-wrap gap-2">
                 {systemsOnline.map(system => (
                   <Badge key={system} variant="default" className="text-xs py-1 px-2">
-                    {SYSTEM_ICONS[system] || '⚡'} {system}
+                    {SYSTEM_ICONS[system] || ''} {system}
                     <CheckCircle2 className="h-3 w-3 ml-1 text-success" />
                   </Badge>
                 ))}
@@ -241,7 +241,7 @@ export function AureonLiveDashboard() {
                   <div className="flex flex-wrap gap-2">
                     {systemsOffline.map(system => (
                       <Badge key={system} variant="outline" className="text-xs py-1 px-2 opacity-50">
-                        {SYSTEM_ICONS[system] || '⚡'} {system}
+                        {SYSTEM_ICONS[system] || ''} {system}
                         <AlertTriangle className="h-3 w-3 ml-1 text-warning" />
                       </Badge>
                     ))}
@@ -285,7 +285,7 @@ export function AureonLiveDashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {SYSTEM_ICONS[signal.system] || '⚡'} {signal.system}
+                        {SYSTEM_ICONS[signal.system] || ''} {signal.system}
                       </Badge>
                       <span className="font-mono font-semibold">{signal.symbol}</span>
                     </div>

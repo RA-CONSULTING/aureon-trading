@@ -118,7 +118,7 @@ export function ActivePositionsPanel() {
     <Card className="bg-card/50 backdrop-blur border-primary/20">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-base">
-          <span>📊 Active Positions</span>
+          <span> Active Positions</span>
           <div className="flex items-center gap-2">
             <Badge variant="outline">{positions.length} open</Badge>
             <Badge 

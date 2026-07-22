@@ -117,7 +117,7 @@ export function TradingStatusPanel() {
             Trading Gates
           </span>
           <Badge variant={tradingMode === 'live' ? 'destructive' : 'secondary'}>
-            {tradingMode === 'live' ? '🔴 LIVE' : '📝 PAPER'}
+            {tradingMode === 'live' ? ' LIVE' : ' PAPER'}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -126,7 +126,7 @@ export function TradingStatusPanel() {
         <div className={`p-3 rounded-lg ${allGatesPassed ? 'bg-success/20 border border-success/30' : 'bg-destructive/20 border border-destructive/30'}`}>
           <div className="flex items-center justify-between">
             <span className="font-semibold">
-              {allGatesPassed ? '✅ READY TO TRADE' : '⛔ GATES BLOCKED'}
+              {allGatesPassed ? ' READY TO TRADE' : ' GATES BLOCKED'}
             </span>
             <span className="text-xs text-muted-foreground">
               Last scan: {lastScanTime}

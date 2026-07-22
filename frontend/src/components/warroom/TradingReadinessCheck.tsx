@@ -64,7 +64,7 @@ export function TradingReadinessCheck() {
       results.push({
         name: 'Trading Mode',
         status: 'pass',
-        message: data?.trading_mode === 'live' ? '🔴 LIVE MODE' : '📝 Paper Mode',
+        message: data?.trading_mode === 'live' ? ' LIVE MODE' : ' Paper Mode',
       });
     } else {
       results.push({
@@ -97,7 +97,7 @@ export function TradingReadinessCheck() {
     <Card className="bg-card/50 backdrop-blur border-primary/20">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-base">
-          <span>✅ Trading Readiness</span>
+          <span> Trading Readiness</span>
           <Badge 
             variant={isReady ? 'default' : 'destructive'}
             className={isReady ? 'bg-success' : ''}

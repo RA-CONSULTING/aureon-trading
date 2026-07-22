@@ -1,5 +1,5 @@
 /**
- * 🦆 DUCK COMMANDO INTEL PANEL 🎖️
+ *  DUCK COMMANDO INTEL PANEL 
  * =================================
  * 
  * Mission briefing and Duck Commando lore display.
@@ -126,17 +126,17 @@ export function DuckCommandoIntel({
                 {status && status.todayKills !== undefined && (
                   <div className="grid grid-cols-3 gap-1 px-2 py-2 bg-slate-900/50 border-t border-slate-700">
                     <div className="text-center">
-                      <span className="block text-xs">🎯</span>
+                      <span className="block text-xs"></span>
                       <span className="block text-sm font-bold text-white">{status.todayKills}</span>
                       <span className="block text-[9px] text-gray-500">Kills</span>
                     </div>
                     <div className="text-center">
-                      <span className="block text-xs">📊</span>
+                      <span className="block text-xs"></span>
                       <span className="block text-sm font-bold text-white">{status.activePositions ?? 0}</span>
                       <span className="block text-[9px] text-gray-500">Active</span>
                     </div>
                     <div className="text-center">
-                      <span className="block text-xs">💰</span>
+                      <span className="block text-xs"></span>
                       <span className={`block text-sm font-bold ${(status.todayPnl ?? 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
                         ${(status.todayPnl ?? 0).toFixed(2)}
                       </span>
@@ -150,7 +150,7 @@ export function DuckCommandoIntel({
                   <div className="p-3 border-t border-slate-700 animate-in fade-in duration-300">
                     <p className="text-xs text-gray-400 mb-2 leading-relaxed">{duck.backstory}</p>
                     <p className="text-xs text-warning italic">
-                      🎯 "{getRandomMissionQuote(duck.exchange)}"
+                       "{getRandomMissionQuote(duck.exchange)}"
                     </p>
                   </div>
                 )}
@@ -167,13 +167,13 @@ export function DuckCommandoIntel({
               className="w-full text-gray-400 hover:text-white text-sm py-3"
               onClick={() => setShowFullLore(!showFullLore)}
             >
-              {showFullLore ? '🔺 Hide Origin Story' : '🔻 The Origin Story'}
+              {showFullLore ? ' Hide Origin Story' : ' The Origin Story'}
             </Button>
             
             {showFullLore && (
               <ScrollArea className="h-[200px]">
                 <div className="px-4 pb-4 animate-in fade-in duration-300">
-                  <h4 className="text-center text-warning font-bold mb-3">📜 THE QUANTUM QUACKERS REBELLION</h4>
+                  <h4 className="text-center text-warning font-bold mb-3"> THE QUANTUM QUACKERS REBELLION</h4>
                   <p className="text-xs text-gray-400 leading-relaxed mb-2 text-justify">
                     Long ago, in the misty marshlands of Ireland, there lived an elite breed of ducks. 
                     The British Crown, in their infinite cruelty, created a program called "Duck Hunt" – 
@@ -200,11 +200,11 @@ export function DuckCommandoIntel({
 
         {/* Footer Quote */}
         <div className="flex items-center justify-center gap-3 pt-3 mt-4 border-t border-slate-700">
-          <span className="text-base">☘️</span>
+          <span className="text-base"></span>
           <span className="text-xs text-gray-500 italic">
             "Four ducks. Four provinces. Four exchanges. One mission."
           </span>
-          <span className="text-base">☘️</span>
+          <span className="text-base"></span>
         </div>
       </CardContent>
     </Card>

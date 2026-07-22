@@ -50,14 +50,14 @@ const SystemStatusCard: React.FC<{
 };
 
 const SYSTEM_ICONS: Record<string, string> = {
-  'harmonic-nexus': '🌌',
-  'master-equation': '📐',
-  'earth-integration': '🌍',
-  'nexus-feed': '📡',
-  'quantum-quackers': '🦆',
-  'akashic-mapper': '📜',
-  'zero-point': '⚡',
-  'dimensional-dialler': '🎛️',
+  'harmonic-nexus': '',
+  'master-equation': '',
+  'earth-integration': '',
+  'nexus-feed': '',
+  'quantum-quackers': '',
+  'akashic-mapper': '',
+  'zero-point': '',
+  'dimensional-dialler': '',
 };
 
 const SYSTEM_DISPLAY_NAMES: Record<string, string> = {
@@ -163,7 +163,7 @@ export const SystemsIntegrationDashboard: React.FC = () => {
               name={SYSTEM_DISPLAY_NAMES[system.name] || system.name}
               active={system.active}
               health={system.health}
-              icon={SYSTEM_ICONS[system.name] || '⚙️'}
+              icon={SYSTEM_ICONS[system.name] || ''}
             />
           ))}
         </div>

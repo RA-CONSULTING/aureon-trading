@@ -155,7 +155,7 @@ export function FullEcosystemStatus() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">6D Wave</span>
               <span className={metrics.harmonicLock ? 'text-success' : 'text-muted-foreground'}>
-                {metrics.waveState} {metrics.harmonicLock && '🔒'}
+                {metrics.waveState} {metrics.harmonicLock && ''}
               </span>
             </div>
             
@@ -175,7 +175,7 @@ export function FullEcosystemStatus() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">HNC Fidelity</span>
               <span className={metrics.rainbowBridgeOpen ? 'text-success' : 'text-muted-foreground'}>
-                {metrics.harmonicFidelity.toFixed(0)}% {metrics.rainbowBridgeOpen && '🌈'}
+                {metrics.harmonicFidelity.toFixed(0)}% {metrics.rainbowBridgeOpen && ''}
               </span>
             </div>
             
@@ -183,7 +183,7 @@ export function FullEcosystemStatus() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Temporal Anchor</span>
               <span className={metrics.temporalAnchorStrength > 0.7 ? 'text-success' : 'text-warning'}>
-                {(metrics.temporalAnchorStrength * 100).toFixed(0)}% {metrics.surgeWindowActive && '⚡'}
+                {(metrics.temporalAnchorStrength * 100).toFixed(0)}% {metrics.surgeWindowActive && ''}
               </span>
             </div>
           </div>
@@ -219,7 +219,7 @@ function SystemBadge({
     <div className={`flex items-center gap-1.5 px-2 py-1 rounded border text-xs ${statusColor}`}>
       {icon || <Activity className="w-3 h-3" />}
       <span className="truncate">{formatSystemName(system.name)}</span>
-      {system.publishedToBus && <span className="text-[10px]">📡</span>}
+      {system.publishedToBus && <span className="text-[10px]"></span>}
     </div>
   );
 }

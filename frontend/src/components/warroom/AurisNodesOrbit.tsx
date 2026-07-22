@@ -10,7 +10,7 @@ const NODE_NAMES = [
   'Owl', 'Panda', 'CargoShip', 'Clownfish'
 ];
 
-const NODE_EMOJIS = ['🐯', '🦅', '🐦', '🐬', '🦌', '🦉', '🐼', '🚢', '🐠'];
+const NODE_EMOJIS = ['', '', '', '', '', '', '', '', ''];
 
 export function AurisNodesOrbit({ quantumState }: Props) {
   const maxWeight = Math.max(...quantumState.waveFunction);
@@ -19,7 +19,7 @@ export function AurisNodesOrbit({ quantumState }: Props) {
     <Card className="bg-card/50 backdrop-blur border-primary/20">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>🌟 9 Auris Nodes (Real-time)</span>
+          <span> 9 Auris Nodes (Real-time)</span>
           {quantumState.dominantNode && (
             <span className="text-sm text-warning">
               Dominant: {quantumState.dominantNode}

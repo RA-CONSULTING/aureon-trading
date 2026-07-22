@@ -21,10 +21,10 @@ const EXCHANGE_COLORS: Record<ExchangeType, string> = {
 };
 
 const EXCHANGE_ICONS: Record<ExchangeType, string> = {
-  binance: '🔶',
-  kraken: '🦑',
-  alpaca: '🦙',
-  capital: '📈',
+  binance: '',
+  kraken: '',
+  alpaca: '',
+  capital: '',
 };
 
 export function MultiExchangePanel() {

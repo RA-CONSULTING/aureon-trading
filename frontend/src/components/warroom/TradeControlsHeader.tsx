@@ -37,9 +37,9 @@ export function TradeControlsHeader({
                 variant={status === 'active' ? 'default' : status === 'emergency_stopped' ? 'destructive' : 'secondary'}
                 className={status === 'active' ? 'bg-success animate-pulse' : ''}
               >
-                {status === 'idle' && '⏸️ IDLE'}
-                {status === 'active' && '🔥 ACTIVE'}
-                {status === 'emergency_stopped' && '🚨 STOPPED'}
+                {status === 'idle' && ' IDLE'}
+                {status === 'active' && ' ACTIVE'}
+                {status === 'emergency_stopped' && ' STOPPED'}
               </Badge>
               
               {globalState.isRunning && (
@@ -94,7 +94,7 @@ export function TradeControlsHeader({
                 onClick={onEmergencyStop}
                 className="font-bold animate-pulse"
               >
-                🚨 EMERGENCY STOP
+                 EMERGENCY STOP
               </Button>
             )}
             {status === 'emergency_stopped' && (
@@ -103,7 +103,7 @@ export function TradeControlsHeader({
                 onClick={onLaunchAssault}
                 className="bg-gradient-to-r from-warning to-warning hover:from-warning hover:to-warning text-white font-bold"
               >
-                🔄 RESUME TRADING
+                 RESUME TRADING
               </Button>
             )}
           </div>
