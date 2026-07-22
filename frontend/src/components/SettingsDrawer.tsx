@@ -38,7 +38,7 @@ export function SettingsDrawer() {
     backendUp === undefined
       ? { dot: "bg-muted-foreground/50", cls: "text-muted-foreground", label: "Checking backend…" }
       : backendUp
-        ? { dot: "bg-green-500 animate-pulse", cls: "text-green-500", label: "Backend connected" }
+        ? { dot: "bg-success animate-pulse", cls: "text-success", label: "Backend connected" }
         : { dot: "bg-muted-foreground/50", cls: "text-muted-foreground", label: "Backend not connected" };
 
   return (

@@ -51,7 +51,7 @@ export function DuckCommandoIntel({
   return (
     <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-primary/20 overflow-hidden">
       {/* Commander Banner */}
-      <CardHeader className="bg-gradient-to-r from-green-600/30 via-slate-800 to-orange-500/30 border-b border-slate-700 pb-3">
+      <CardHeader className="bg-gradient-to-r from-success/30 via-slate-800 to-warning/30 border-b border-slate-700 pb-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="flex flex-col">
@@ -59,7 +59,7 @@ export function DuckCommandoIntel({
               <span className="text-xs text-muted-foreground">Per-exchange connection intel</span>
             </div>
           </div>
-          <Badge className="bg-green-600/20 text-green-400 border-green-600/50 text-sm font-bold">
+          <Badge className="bg-success/20 text-success border-success/50 text-sm font-bold">
             Live Exchange Intel
           </Badge>
         </div>
@@ -73,9 +73,9 @@ export function DuckCommandoIntel({
 
         {/* Irish Tricolor Divider */}
         <div className="flex h-1 mb-4">
-          <div className="flex-1 bg-green-600" />
+          <div className="flex-1 bg-success" />
           <div className="flex-1 bg-white" />
-          <div className="flex-1 bg-orange-500" />
+          <div className="flex-1 bg-warning" />
         </div>
 
         {/* Duck Commandos Section */}
@@ -101,14 +101,14 @@ export function DuckCommandoIntel({
                   style={{ backgroundColor: duck.provinceColor }}
                 >
                   <span>{duck.province} {duck.provinceEmoji}</span>
-                  <span className={`w-2 h-2 rounded-full ${status?.connected ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`} />
+                  <span className={`w-2 h-2 rounded-full ${status?.connected ? 'bg-success animate-pulse' : 'bg-gray-500'}`} />
                 </div>
 
                 {/* Avatar & Identity */}
                 <div className="flex flex-col items-center py-3">
                   <span className="text-4xl mb-1">{duck.avatar}</span>
                   <span className="text-sm font-bold text-white">{duck.realName}</span>
-                  <span className="text-xs text-yellow-400 italic">"{duck.nickname}"</span>
+                  <span className="text-xs text-warning italic">"{duck.nickname}"</span>
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider">{duck.codename}</span>
                 </div>
 
@@ -137,7 +137,7 @@ export function DuckCommandoIntel({
                     </div>
                     <div className="text-center">
                       <span className="block text-xs">💰</span>
-                      <span className={`block text-sm font-bold ${(status.todayPnl ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <span className={`block text-sm font-bold ${(status.todayPnl ?? 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
                         ${(status.todayPnl ?? 0).toFixed(2)}
                       </span>
                       <span className="block text-[9px] text-gray-500">PnL</span>
@@ -149,7 +149,7 @@ export function DuckCommandoIntel({
                 {isSelected && (
                   <div className="p-3 border-t border-slate-700 animate-in fade-in duration-300">
                     <p className="text-xs text-gray-400 mb-2 leading-relaxed">{duck.backstory}</p>
-                    <p className="text-xs text-yellow-400 italic">
+                    <p className="text-xs text-warning italic">
                       🎯 "{getRandomMissionQuote(duck.exchange)}"
                     </p>
                   </div>
@@ -173,14 +173,14 @@ export function DuckCommandoIntel({
             {showFullLore && (
               <ScrollArea className="h-[200px]">
                 <div className="px-4 pb-4 animate-in fade-in duration-300">
-                  <h4 className="text-center text-yellow-400 font-bold mb-3">📜 THE QUANTUM QUACKERS REBELLION</h4>
+                  <h4 className="text-center text-warning font-bold mb-3">📜 THE QUANTUM QUACKERS REBELLION</h4>
                   <p className="text-xs text-gray-400 leading-relaxed mb-2 text-justify">
                     Long ago, in the misty marshlands of Ireland, there lived an elite breed of ducks. 
                     The British Crown, in their infinite cruelty, created a program called "Duck Hunt" – 
                     not a game, but a systematic hunting of Irish ducks for sport by the English elite.
                   </p>
                   <p className="text-xs text-gray-400 leading-relaxed mb-2 text-justify">
-                    From this darkness rose <span className="text-yellow-400 font-bold">Quantum Quackers</span>, a duck of extraordinary 
+                    From this darkness rose <span className="text-warning font-bold">Quantum Quackers</span>, a duck of extraordinary 
                     intelligence who organized the great escape. He gathered the finest ducks from each 
                     of Ireland's four provinces: Ulster, Munster, Leinster, and Connacht.
                   </p>
@@ -189,7 +189,7 @@ export function DuckCommandoIntel({
                     markets. Each commando patrols one exchange – Kraken, Binance, Alpaca, and Capital.com – 
                     extracting micro-profits one trade at a time.
                   </p>
-                  <p className="text-sm text-yellow-400 italic text-center mt-4">
+                  <p className="text-sm text-warning italic text-center mt-4">
                     "They hunted us for sport. Now we hunt for profit. Every penny is a victory."
                   </p>
                 </div>

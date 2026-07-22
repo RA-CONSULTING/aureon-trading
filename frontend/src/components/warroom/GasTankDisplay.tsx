@@ -31,9 +31,9 @@ export const GasTankDisplay = ({ userId, onEmpty }: GasTankDisplayProps) => {
   // Determine gauge color
   const getGaugeColor = () => {
     if (gasTank.status === 'EMPTY') return 'from-gray-600 to-gray-800';
-    if (gasTank.status === 'CRITICAL') return 'from-red-600 to-red-800';
-    if (gasTank.status === 'LOW') return 'from-yellow-600 to-yellow-800';
-    return 'from-green-600 to-green-800';
+    if (gasTank.status === 'CRITICAL') return 'from-destructive to-destructive';
+    if (gasTank.status === 'LOW') return 'from-warning to-warning';
+    return 'from-success to-success';
   };
 
   // Determine status emoji
@@ -120,11 +120,11 @@ export const GasTankDisplay = ({ userId, onEmpty }: GasTankDisplayProps) => {
               </div>
               <div>
                 <p className="text-muted-foreground">Today's Fees</p>
-                <p className="font-bold text-red-500">£{gasTank.feesPaidToday.toFixed(2)}</p>
+                <p className="font-bold text-destructive">£{gasTank.feesPaidToday.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Total Fees Paid</p>
-                <p className="font-bold text-red-500">£{gasTank.totalFeesPaid.toFixed(2)}</p>
+                <p className="font-bold text-destructive">£{gasTank.totalFeesPaid.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Status</p>
@@ -148,7 +148,7 @@ export const GasTankDisplay = ({ userId, onEmpty }: GasTankDisplayProps) => {
               <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
                 <div className="text-center p-4">
                   <p className="text-2xl mb-2">⛽</p>
-                  <p className="font-bold text-red-500 mb-2">GAS TANK EMPTY</p>
+                  <p className="font-bold text-destructive mb-2">GAS TANK EMPTY</p>
                   <p className="text-xs text-muted-foreground mb-3">Trading Paused</p>
                   <Button
                     onClick={() => setShowTopUpModal(true)}

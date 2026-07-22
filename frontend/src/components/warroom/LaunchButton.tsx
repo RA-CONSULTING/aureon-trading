@@ -135,8 +135,8 @@ export function LaunchButton({ onLaunch, onStop, status }: LaunchButtonProps) {
             {/* Status */}
             <div className="flex items-center gap-4">
               <div className={`w-4 h-4 rounded-full ${
-                status === 'active' ? 'bg-green-500 animate-pulse' :
-                status === 'emergency_stopped' ? 'bg-red-500' : 'bg-muted'
+                status === 'active' ? 'bg-success animate-pulse' :
+                status === 'emergency_stopped' ? 'bg-destructive' : 'bg-muted'
               }`} />
               <div>
                 <h3 className="text-xl font-bold">
@@ -171,7 +171,7 @@ export function LaunchButton({ onLaunch, onStop, status }: LaunchButtonProps) {
                   size="lg"
                   onClick={() => validateAndLaunch()}
                   disabled={isLaunching}
-                  className="bg-gradient-to-r from-green-500 to-primary hover:from-green-600 hover:to-primary/90 text-white font-bold text-lg px-8"
+                  className="bg-gradient-to-r from-success to-primary hover:from-success hover:to-primary/90 text-white font-bold text-lg px-8"
                 >
                   {isLaunching ? (
                     <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -197,7 +197,7 @@ export function LaunchButton({ onLaunch, onStop, status }: LaunchButtonProps) {
                   size="lg"
                   onClick={() => validateAndLaunch()}
                   disabled={isLaunching}
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-lg px-8"
+                  className="bg-gradient-to-r from-warning to-warning hover:from-warning hover:to-warning text-white font-bold text-lg px-8"
                 >
                   <Rocket className="h-5 w-5 mr-2" />
                   🔄 RESUME TRADING

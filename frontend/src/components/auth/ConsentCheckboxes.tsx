@@ -67,7 +67,7 @@ export function ConsentCheckboxes({
         />
         <Label htmlFor="risk" className="text-xs text-muted-foreground leading-tight cursor-pointer">
           I understand that{" "}
-          <span className="text-amber-500 font-medium">trading involves significant risk</span>
+          <span className="text-warning font-medium">trading involves significant risk</span>
           {" "}and I may lose some or all of my investment. I am trading with funds I can afford to lose.
         </Label>
       </div>

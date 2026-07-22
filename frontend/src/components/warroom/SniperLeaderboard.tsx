@@ -86,7 +86,7 @@ export function SniperLeaderboard({
   return (
     <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-primary/20 overflow-hidden">
       {/* Header */}
-      <CardHeader className="bg-gradient-to-r from-green-600/30 via-slate-800 to-orange-500/30 border-b border-slate-700 pb-3">
+      <CardHeader className="bg-gradient-to-r from-success/30 via-slate-800 to-warning/30 border-b border-slate-700 pb-3">
         <CardTitle className="flex items-center justify-center gap-3 text-lg">
           <span className="font-extrabold tracking-wider text-foreground">Signal Leaderboard</span>
         </CardTitle>
@@ -127,7 +127,7 @@ export function SniperLeaderboard({
             <span className="text-xs text-gray-400 uppercase">Total Kills</span>
           </div>
           <div className="text-center p-3 bg-slate-800/50 rounded-lg">
-            <span className="block text-2xl font-bold text-green-400">+${totals.pnl.toFixed(2)}</span>
+            <span className="block text-2xl font-bold text-success">+${totals.pnl.toFixed(2)}</span>
             <span className="text-xs text-gray-400 uppercase">Total PnL</span>
           </div>
           <div className="text-center p-3 bg-slate-800/50 rounded-lg">
@@ -149,7 +149,7 @@ export function SniperLeaderboard({
               key={key}
               size="sm"
               variant={currentSort === key ? 'default' : 'outline'}
-              className={`text-xs h-7 ${currentSort === key ? 'bg-green-600' : ''}`}
+              className={`text-xs h-7 ${currentSort === key ? 'bg-success' : ''}`}
               onClick={() => setCurrentSort(key as SortField)}
             >
               {label}
@@ -192,9 +192,9 @@ export function SniperLeaderboard({
               <div
                 key={stat.symbol}
                 className={`grid grid-cols-10 gap-1 text-xs p-2 rounded transition-colors hover:bg-slate-700/50 ${
-                  index === 0 ? 'bg-yellow-500/10' : 
+                  index === 0 ? 'bg-warning/10' : 
                   index === 1 ? 'bg-gray-400/10' : 
-                  index === 2 ? 'bg-orange-500/10' : ''
+                  index === 2 ? 'bg-warning/10' : ''
                 }`}
               >
                 <div className="text-center font-bold">
@@ -205,16 +205,16 @@ export function SniperLeaderboard({
                 </div>
                 <div className="col-span-2 font-bold text-white">{stat.symbol}</div>
                 <div className="text-center text-white">{stat.totalKills}</div>
-                <div className={`text-center ${stat.totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <div className={`text-center ${stat.totalPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
                   {stat.totalPnl >= 0 ? '+' : ''}${stat.totalPnl.toFixed(2)}
                 </div>
                 <div className="text-center">
-                  <span className={stat.quickKillRate >= 0.9 ? 'text-yellow-400 font-bold' : 'text-gray-300'}>
+                  <span className={stat.quickKillRate >= 0.9 ? 'text-warning font-bold' : 'text-gray-300'}>
                     {(stat.quickKillRate * 100).toFixed(1)}%
                   </span>
                 </div>
                 <div className="text-center">
-                  <span className={stat.avgBarsToProfit <= 2 ? 'text-green-400 font-bold' : 'text-gray-300'}>
+                  <span className={stat.avgBarsToProfit <= 2 ? 'text-success font-bold' : 'text-gray-300'}>
                     {stat.avgBarsToProfit.toFixed(1)}
                   </span>
                 </div>

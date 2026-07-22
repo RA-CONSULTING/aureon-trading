@@ -15,7 +15,7 @@ export function SimulatedDataBadge({ className = "" }: { className?: string }) {
   return (
     <Badge
       variant="outline"
-      className={`gap-1 border-amber-500/40 text-amber-500 ${className}`}
+      className={`gap-1 border-warning/40 text-warning ${className}`}
       title="These values come from an in-browser simulation, not a live backend feed."
     >
       <FlaskConical className="h-3 w-3" aria-hidden />

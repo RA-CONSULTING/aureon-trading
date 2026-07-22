@@ -142,7 +142,7 @@ export function LiveStrikeStream() {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical': return 'bg-destructive text-destructive-foreground';
-      case 'success': return 'bg-green-500/20 text-green-500 border-green-500/50';
+      case 'success': return 'bg-success/20 text-success border-success/50';
       default: return 'bg-primary/20 text-primary border-primary/50';
     }
   };
