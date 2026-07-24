@@ -11,8 +11,8 @@
           "url": "https://orcid.org/0009-0004-2792-4649"
         },
         {
-          "label": "Zenodo",
-          "url": "https://zenodo.org/search?q=metadata.creators.person_or_org.name%3A%22Leckey%2C%20Gary%22"
+          "label": "Zenodo — Aureon Institute community",
+          "url": "https://zenodo.org/communities/aureon-institute/"
         },
         {
           "label": "ResearchGate",
@@ -50,8 +50,8 @@
           "url": "https://github.com/luciferprosun"
         },
         {
-          "label": "Zenodo",
-          "url": "https://zenodo.org/search?q=LuciferSun"
+          "label": "Zenodo — Aureon Institute community",
+          "url": "https://zenodo.org/communities/aureon-institute/"
         }
       ],
       "collections": []
